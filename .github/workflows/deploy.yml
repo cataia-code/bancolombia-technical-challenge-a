@@ -74,10 +74,35 @@ jobs:
       - name: Validar docker-compose
         run: docker compose -f poc/docker-compose.yml config
 
+  # ---- Verificación del discovery de la Ola 0 ----
+  discovery-tests:
+    name: Verificar discovery Ola 0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Instalar dependencias
+        working-directory: discovery
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+
+      - name: Tests discovery
+        working-directory: discovery
+        run: python -m pytest tests/ -q
+
+      - name: Catálogo Ola 0 se genera
+        working-directory: discovery
+        run: python discovery.py
+
   # ---- Build del artefacto de Pages ----
   build:
     name: Build Pages
-    needs: [verify, poc-tests]
+    needs: [verify, poc-tests, discovery-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

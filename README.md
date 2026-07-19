@@ -41,6 +41,11 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 │   └── assets/
 │       ├── images/               # Logos Bancolombia (svg wordmark + png isotipo/favicon)
 │       └── vendor/               # Mermaid empaquetado localmente (sin CDN)
+├── discovery/                    # Discovery Ola 0 ejecutable: scoring, clustering, catálogo
+│   ├── discovery.py              # motor: normalización, similitud, scoring, decisión, matriz API
+│   ├── sample_inventory.csv      # inventario de ejemplo (metadata estilo Control Room)
+│   ├── tests/                    # 22 tests del motor de discovery
+│   └── out/                      # catálogo Ola 0 generado (JSON + Markdown)
 ├── poc/                          # PoC ejecutable: saga, reintentos, DLQ, compensación
 │   ├── src/                      # motor, componentes, adaptadores, infra, app (FastAPI)
 │   ├── tests/                    # 38 tests con 100% coverage sobre poc/src
@@ -68,6 +73,20 @@ docker compose up --build      # stack completo: orquestador + mock-api + redis
 ```
 
 Ver [`poc/README.md`](poc/README.md) para el detalle y los `curl` de ejemplo. Los contratos de referencia están en [`poc/contracts/`](poc/contracts/): API síncrona, eventos asíncronos y manifiesto de componente versionado.
+
+## Discovery Ola 0 ejecutable (`/discovery`)
+
+Materializa el discovery de la **Ola 0** (Preguntas 1 y 2): toma un inventario de taskbots (metadata estilo Control Room de Automation Anywhere) y produce el **catálogo de capacidades** — normalización a *firmas*, **clustering** por similitud (Jaccard), **scoring** con la misma fórmula del sitio, decisión **migrar/consolidar/retirar** y **matriz API / no-API**. Cero dependencias: solo librería estándar.
+
+```bash
+# PowerShell desde la raíz del repo
+.\.venv\Scripts\Activate.ps1
+cd discovery
+python discovery.py                 # imprime el catálogo y lo escribe en out/
+python -m pytest tests/ -q          # 22 tests
+```
+
+Sobre el inventario de ejemplo (44 taskbots) el motor colapsa a **15 capacidades (65.9% de reducción)**, marca **5 capacidades bloqueadas por API faltante** y prioriza el backlog por score. Ver [`discovery/README.md`](discovery/README.md).
 
 ---
 

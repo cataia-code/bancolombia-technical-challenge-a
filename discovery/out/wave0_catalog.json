@@ -1,0 +1,385 @@
+{
+  "summary": {
+    "total_taskbots": 44,
+    "total_capabilities": 15,
+    "estimated_reduction_pct": 65.9,
+    "jaccard_threshold": 0.75,
+    "decisions": {
+      "MIGRATE": 10,
+      "CONSOLIDATE": 29,
+      "RETIRE": 5
+    },
+    "blocked_by_api": [
+      "CAP-ON-001",
+      "CAP-DES-001",
+      "CAP-EXT-001",
+      "CAP-KYC-001",
+      "CAP-RG-001"
+    ]
+  },
+  "api_matrix": [
+    {
+      "target_system": "SIFIN",
+      "has_api": false,
+      "bots": 16,
+      "monthly_volume": 41200,
+      "needs_api_exposure": true
+    },
+    {
+      "target_system": "SwitchTarjetas",
+      "has_api": true,
+      "bots": 3,
+      "monthly_volume": 13600,
+      "needs_api_exposure": false
+    },
+    {
+      "target_system": "SAP",
+      "has_api": true,
+      "bots": 6,
+      "monthly_volume": 11420,
+      "needs_api_exposure": false
+    },
+    {
+      "target_system": "CRM",
+      "has_api": true,
+      "bots": 6,
+      "monthly_volume": 10900,
+      "needs_api_exposure": false
+    },
+    {
+      "target_system": "PortalWeb",
+      "has_api": false,
+      "bots": 5,
+      "monthly_volume": 10410,
+      "needs_api_exposure": true
+    },
+    {
+      "target_system": "Correo",
+      "has_api": true,
+      "bots": 1,
+      "monthly_volume": 8800,
+      "needs_api_exposure": false
+    },
+    {
+      "target_system": "Excel",
+      "has_api": false,
+      "bots": 2,
+      "monthly_volume": 165,
+      "needs_api_exposure": true
+    },
+    {
+      "target_system": "PortalSFC",
+      "has_api": false,
+      "bots": 4,
+      "monthly_volume": 162,
+      "needs_api_exposure": true
+    },
+    {
+      "target_system": "FTP",
+      "has_api": false,
+      "bots": 1,
+      "monthly_volume": 30,
+      "needs_api_exposure": true
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": "CAP-REC-001",
+      "target_system": "SAP",
+      "has_api": true,
+      "taskbots": [
+        "REC-001",
+        "REC-002",
+        "REC-003",
+        "REC-004",
+        "REC-005",
+        "UNQ-001"
+      ],
+      "canonical": "REC-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 4.0,
+      "canonical_score": 4.0,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "REC-001": "MIGRATE",
+        "REC-002": "CONSOLIDATE",
+        "REC-003": "CONSOLIDATE",
+        "REC-004": "CONSOLIDATE",
+        "REC-005": "CONSOLIDATE",
+        "UNQ-001": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-PQR-001",
+      "target_system": "CRM",
+      "has_api": true,
+      "taskbots": [
+        "PQR-001",
+        "PQR-002",
+        "PQR-003",
+        "PQR-004",
+        "PQR-005"
+      ],
+      "canonical": "PQR-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 3.5,
+      "canonical_score": 3.85,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "PQR-001": "MIGRATE",
+        "PQR-002": "CONSOLIDATE",
+        "PQR-003": "CONSOLIDATE",
+        "PQR-004": "CONSOLIDATE",
+        "PQR-005": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-ON-001",
+      "target_system": "SIFIN",
+      "has_api": false,
+      "taskbots": [
+        "ON-001",
+        "ON-002",
+        "ON-003",
+        "ON-004",
+        "ON-005",
+        "ON-006",
+        "ON-007"
+      ],
+      "canonical": "ON-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 5.0,
+      "canonical_score": 3.8,
+      "blocked_by_api": true,
+      "bot_decisions": {
+        "ON-001": "MIGRATE",
+        "ON-002": "CONSOLIDATE",
+        "ON-003": "CONSOLIDATE",
+        "ON-004": "CONSOLIDATE",
+        "ON-005": "CONSOLIDATE",
+        "ON-006": "CONSOLIDATE",
+        "ON-007": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-BLQ-001",
+      "target_system": "SwitchTarjetas",
+      "has_api": true,
+      "taskbots": [
+        "BLQ-001",
+        "BLQ-002"
+      ],
+      "canonical": "BLQ-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 4.5,
+      "canonical_score": 3.8,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "BLQ-001": "MIGRATE",
+        "BLQ-002": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-UNQ-002",
+      "target_system": "Correo",
+      "has_api": true,
+      "taskbots": [
+        "UNQ-002"
+      ],
+      "canonical": "UNQ-002",
+      "cluster_decision": "MIGRATE",
+      "max_value": 3.5,
+      "canonical_score": 3.55,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "UNQ-002": "MIGRATE"
+      }
+    },
+    {
+      "capability_id": "CAP-DES-001",
+      "target_system": "SIFIN",
+      "has_api": false,
+      "taskbots": [
+        "DES-001",
+        "DES-002",
+        "DES-003",
+        "DES-004",
+        "DES-005",
+        "DES-006"
+      ],
+      "canonical": "DES-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 4.5,
+      "canonical_score": 3.25,
+      "blocked_by_api": true,
+      "bot_decisions": {
+        "DES-001": "MIGRATE",
+        "DES-002": "CONSOLIDATE",
+        "DES-003": "CONSOLIDATE",
+        "DES-004": "CONSOLIDATE",
+        "DES-005": "CONSOLIDATE",
+        "DES-006": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-EXT-001",
+      "target_system": "PortalWeb",
+      "has_api": false,
+      "taskbots": [
+        "EXT-001",
+        "EXT-002",
+        "EXT-003",
+        "EXT-004",
+        "OBS-003"
+      ],
+      "canonical": "EXT-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 3.0,
+      "canonical_score": 3.2,
+      "blocked_by_api": true,
+      "bot_decisions": {
+        "EXT-001": "MIGRATE",
+        "EXT-002": "CONSOLIDATE",
+        "EXT-003": "CONSOLIDATE",
+        "EXT-004": "CONSOLIDATE",
+        "OBS-003": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-KYC-001",
+      "target_system": "SIFIN",
+      "has_api": false,
+      "taskbots": [
+        "KYC-001",
+        "KYC-002",
+        "KYC-003"
+      ],
+      "canonical": "KYC-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 4.0,
+      "canonical_score": 3.0,
+      "blocked_by_api": true,
+      "bot_decisions": {
+        "KYC-001": "MIGRATE",
+        "KYC-002": "CONSOLIDATE",
+        "KYC-003": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-BLQ-003",
+      "target_system": "SwitchTarjetas",
+      "has_api": true,
+      "taskbots": [
+        "BLQ-003"
+      ],
+      "canonical": "BLQ-003",
+      "cluster_decision": "MIGRATE",
+      "max_value": 4.0,
+      "canonical_score": 2.9,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "BLQ-003": "MIGRATE"
+      }
+    },
+    {
+      "capability_id": "CAP-RG-001",
+      "target_system": "PortalSFC",
+      "has_api": false,
+      "taskbots": [
+        "RG-001",
+        "RG-002",
+        "RG-003"
+      ],
+      "canonical": "RG-001",
+      "cluster_decision": "MIGRATE",
+      "max_value": 3.0,
+      "canonical_score": 2.65,
+      "blocked_by_api": true,
+      "bot_decisions": {
+        "RG-001": "MIGRATE",
+        "RG-002": "CONSOLIDATE",
+        "RG-003": "CONSOLIDATE"
+      }
+    },
+    {
+      "capability_id": "CAP-OBS-002",
+      "target_system": "FTP",
+      "has_api": false,
+      "taskbots": [
+        "OBS-002"
+      ],
+      "canonical": "OBS-002",
+      "cluster_decision": "RETIRE",
+      "max_value": 1.0,
+      "canonical_score": 2.5,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "OBS-002": "RETIRE"
+      }
+    },
+    {
+      "capability_id": "CAP-PQR-006",
+      "target_system": "CRM",
+      "has_api": true,
+      "taskbots": [
+        "PQR-006"
+      ],
+      "canonical": "PQR-006",
+      "cluster_decision": "RETIRE",
+      "max_value": 2.0,
+      "canonical_score": 2.45,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "PQR-006": "RETIRE"
+      }
+    },
+    {
+      "capability_id": "CAP-OBS-001",
+      "target_system": "Excel",
+      "has_api": false,
+      "taskbots": [
+        "OBS-001"
+      ],
+      "canonical": "OBS-001",
+      "cluster_decision": "RETIRE",
+      "max_value": 1.0,
+      "canonical_score": 2.2,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "OBS-001": "RETIRE"
+      }
+    },
+    {
+      "capability_id": "CAP-REC-006",
+      "target_system": "Excel",
+      "has_api": false,
+      "taskbots": [
+        "REC-006"
+      ],
+      "canonical": "REC-006",
+      "cluster_decision": "RETIRE",
+      "max_value": 1.5,
+      "canonical_score": 1.9,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "REC-006": "RETIRE"
+      }
+    },
+    {
+      "capability_id": "CAP-RG-004",
+      "target_system": "PortalSFC",
+      "has_api": false,
+      "taskbots": [
+        "RG-004"
+      ],
+      "canonical": "RG-004",
+      "cluster_decision": "RETIRE",
+      "max_value": 2.0,
+      "canonical_score": 1.45,
+      "blocked_by_api": false,
+      "bot_decisions": {
+        "RG-004": "RETIRE"
+      }
+    }
+  ]
+}

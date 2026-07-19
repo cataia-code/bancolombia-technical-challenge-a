@@ -1,0 +1,4 @@
+# El motor de discovery usa solo la libreria estandar.
+# Estas dependencias son unicamente para ejecutar los tests.
+pytest==8.3.4
+pytest-cov==7.1.0

@@ -1,0 +1,45 @@
+bot_id,name,region,target_system,has_api,monthly_volume,criticality,complexity,risk,dependency,steps,systems
+REC-001,Conciliacion cuentas COP,Nacional,SAP,true,4200,4,2,2,2,login|query_db|read_field|validate|write_record|confirm,SAP|PortalTesoreria
+REC-002,Conciliacion cuentas USD,Nacional,SAP,true,1800,4,2,2,2,login|query_db|read_field|validate|write_record|confirm,SAP|PortalTesoreria
+REC-003,Conciliacion cuentas EUR,Nacional,SAP,true,600,3,2,2,2,login|query_db|read_field|validate|write_record|confirm,SAP|PortalTesoreria
+REC-004,Conciliacion filial Panama,Internacional,SAP,true,900,3,3,3,2,login|query_db|read_field|validate|ocr|write_record|confirm,SAP|PortalTesoreria
+REC-005,Conciliacion cuentas COP v2,Cali,SAP,true,3900,4,2,2,2,login|query_db|read_field|validate|write_record|confirm,SAP|PortalTesoreria
+REC-006,Conciliacion manual legacy,Bogota,Excel,false,120,2,4,2,4,open_app|login|read_field|screenshot|write_record,Excel|PortalTesoreria
+ON-001,Onboarding cliente Personas,Nacional,SIFIN,false,5200,5,4,3,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm,SIFIN|CRM
+ON-002,Onboarding cliente Pyme,Nacional,SIFIN,false,2100,5,4,3,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm,SIFIN|CRM
+ON-003,Onboarding cliente Empresas,Nacional,SIFIN,false,800,5,5,4,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm|api_call,SIFIN|CRM|SAP
+ON-004,Onboarding Preferencial,Nacional,SIFIN,false,400,4,4,3,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm,SIFIN|CRM
+ON-005,Onboarding Personas Medellin,Medellin,SIFIN,false,4800,5,4,3,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm,SIFIN|CRM
+ON-006,Onboarding Personas Cali,Cali,SIFIN,false,4600,5,4,3,4,open_app|login|read_field|validate|ocr|write_record|screenshot|confirm,SIFIN|CRM
+ON-007,Onboarding canal Web,Nacional,SIFIN,false,3100,4,4,3,4,open_app|login|read_field|validate|ocr|write_record|download_file|confirm,SIFIN|CRM
+RG-001,Reporte SFC formato 044,Nacional,PortalSFC,false,60,5,3,4,5,login|query_db|download_file|validate|upload_file|confirm,PortalSFC|Excel
+RG-002,Reporte SFC formato 088,Nacional,PortalSFC,false,60,5,3,4,5,login|query_db|download_file|validate|upload_file|confirm,PortalSFC|Excel
+RG-003,Reporte SFC formato 341,Nacional,PortalSFC,false,30,5,3,4,5,login|query_db|download_file|validate|upload_file|confirm,PortalSFC|Excel
+RG-004,Reporte regulatorio legacy,Nacional,PortalSFC,false,12,3,5,4,5,open_app|login|screenshot|download_file|upload_file,PortalSFC|Excel
+PQR-001,Gestion PQR Tarjetas,Nacional,CRM,true,3400,3,2,2,2,login|read_field|validate|write_record|send_email|confirm,CRM|Correo
+PQR-002,Gestion PQR Cuentas,Nacional,CRM,true,2900,3,2,2,2,login|read_field|validate|write_record|send_email|confirm,CRM|Correo
+PQR-003,Gestion PQR Credito,Nacional,CRM,true,1700,3,2,2,2,login|read_field|validate|write_record|send_email|confirm,CRM|Correo
+PQR-004,Gestion PQR Fraude,Nacional,CRM,true,900,5,3,5,2,login|read_field|validate|query_db|write_record|send_email|confirm,CRM|Correo|SIFIN
+PQR-005,Gestion PQR Redes,Nacional,CRM,true,1200,2,2,2,2,login|read_field|validate|write_record|send_email|confirm,CRM|Correo
+PQR-006,PQR Tarjetas legacy,Nacional,CRM,true,800,2,3,2,2,open_app|login|read_field|write_record|send_email,CRM|Correo
+DES-001,Desembolso Consumo,Nacional,SIFIN,false,2600,5,4,4,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+DES-002,Desembolso Vehiculo,Nacional,SIFIN,false,1400,5,4,4,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+DES-003,Desembolso Hipotecario,Nacional,SIFIN,false,700,5,5,5,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+DES-004,Desembolso Libranza,Nacional,SIFIN,false,1900,4,4,4,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+DES-005,Desembolso Microcredito,Nacional,SIFIN,false,3200,4,4,4,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+DES-006,Desembolso Consumo v2,Barranquilla,SIFIN,false,2400,5,4,4,4,login|read_field|validate|query_db|write_record|api_call|confirm,SIFIN|SAP
+BLQ-001,Bloqueo tarjeta Debito,Nacional,SwitchTarjetas,true,6100,4,1,3,1,login|read_field|api_call|confirm,SwitchTarjetas
+BLQ-002,Bloqueo tarjeta Credito,Nacional,SwitchTarjetas,true,5300,4,1,3,1,login|read_field|api_call|confirm,SwitchTarjetas
+BLQ-003,Bloqueo por Fraude,Nacional,SwitchTarjetas,true,2200,5,2,5,1,login|read_field|query_db|api_call|confirm,SwitchTarjetas|SIFIN
+KYC-001,Actualizacion KYC Personas,Nacional,SIFIN,false,3800,4,4,3,4,open_app|login|read_field|ocr|validate|write_record|confirm,SIFIN|GestorDocumental
+KYC-002,Actualizacion KYC Pyme,Nacional,SIFIN,false,1500,4,4,3,4,open_app|login|read_field|ocr|validate|write_record|confirm,SIFIN|GestorDocumental
+KYC-003,Refresh KYC periodico,Nacional,SIFIN,false,2700,3,4,3,4,open_app|login|read_field|ocr|validate|write_record|confirm,SIFIN|GestorDocumental
+EXT-001,Extraccion extractos Ahorros,Nacional,PortalWeb,false,4400,2,3,2,5,open_app|login|screenshot|download_file|read_field,PortalWeb
+EXT-002,Extraccion extractos Corriente,Nacional,PortalWeb,false,3100,2,3,2,5,open_app|login|screenshot|download_file|read_field,PortalWeb
+EXT-003,Extraccion extractos Tarjeta,Nacional,PortalWeb,false,2800,2,3,2,5,open_app|login|screenshot|download_file|read_field,PortalWeb
+EXT-004,Extraccion extractos legacy,Bogota,PortalWeb,false,90,1,4,2,5,open_app|login|screenshot|download_file,PortalWeb
+UNQ-001,Calculo provisiones NIIF,Nacional,SAP,true,20,5,5,4,3,login|query_db|read_field|validate|write_record|confirm,SAP|Actuarial
+UNQ-002,Notificacion vencimientos,Nacional,Correo,true,8800,2,1,1,1,query_db|read_field|send_email,Correo
+OBS-001,Reporte manual Excel diario,Bogota,Excel,false,45,1,3,1,3,open_app|login|read_field|screenshot,Excel
+OBS-002,Copia archivos FTP nocturna,Nacional,FTP,false,30,1,2,1,2,login|download_file|upload_file,FTP
+OBS-003,Screenshot dashboard gerencia,Bogota,PortalWeb,false,20,1,2,1,4,open_app|login|screenshot,PortalWeb
