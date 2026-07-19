@@ -1,10 +1,11 @@
-"""Adaptador hacia un sistema destino por API (el camino preferido).
+"""Adapter for a target system exposed through HTTP APIs.
 
-Traduce la semántica HTTP a errores de dominio:
-  - timeout / 5xx  -> TransientError  (se reintenta)
-  - 4xx            -> PermanentError  (no se reintenta)
-Propaga `correlationId` e `Idempotency-Key` en headers.
-`httpx` se importa de forma perezosa para no acoplar el motor a la librería.
+It translates HTTP semantics into domain errors:
+  - timeout / 5xx -> TransientError
+  - 4xx           -> PermanentError
+
+It also propagates `correlationId` and `Idempotency-Key` headers. `httpx` is
+imported lazily so the saga engine remains decoupled from HTTP infrastructure.
 """
 from __future__ import annotations
 
@@ -18,48 +19,46 @@ class ApiAdapter:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
 
-    def ejecutar_pago(self, ctx: dict[str, Any]) -> dict[str, Any]:
-        import httpx  # import perezoso
+    def execute_payment(self, ctx: dict[str, Any]) -> dict[str, Any]:
+        import httpx
 
         cid = ctx["correlationId"]
         payload = ctx["payload"]
-        headers = {"X-Correlation-Id": cid, "Idempotency-Key": f"{cid}:pago"}
+        headers = {"X-Correlation-Id": cid, "Idempotency-Key": f"{cid}:payment"}
         try:
-            resp = httpx.post(
-                f"{self._base_url}/pagos",
+            response = httpx.post(
+                f"{self._base_url}/payments",
                 json=payload,
                 headers=headers,
                 timeout=self._timeout,
             )
-        except httpx.TimeoutException as exc:  # transitorio
-            raise TransientError(f"timeout hacia sistema destino: {exc}") from exc
-        except httpx.TransportError as exc:  # red caída, transitorio
-            raise TransientError(f"error de transporte: {exc}") from exc
+        except httpx.TimeoutException as exc:
+            raise TransientError(f"timeout calling target system: {exc}") from exc
+        except httpx.TransportError as exc:
+            raise TransientError(f"transport error calling target system: {exc}") from exc
 
-        if resp.status_code >= 500:
-            raise TransientError(f"sistema destino 5xx: {resp.status_code}")
-        if resp.status_code >= 400:
-            # No se propaga el cuerpo crudo del sistema destino: puede contener PII
-            # y terminaría en logs/DLQ. Solo el código de estado.
-            raise PermanentError(f"rechazo de negocio {resp.status_code}")
+        if response.status_code >= 500:
+            raise TransientError(f"target system returned 5xx: {response.status_code}")
+        if response.status_code >= 400:
+            raise PermanentError(f"business rejection {response.status_code}")
 
-        data = resp.json()
-        return {"referencia_ejecucion": data.get("referencia"), "aplicado": True}
+        data = response.json()
+        reference = data.get("reference", data.get("referencia"))
+        return {"execution_reference": reference, "applied": True}
 
-    def reversar_pago(self, ctx: dict[str, Any]) -> None:
-        """Compensación: reversa la ejecución (idempotente por referencia)."""
+    def reverse_payment(self, ctx: dict[str, Any]) -> None:
+        """Best-effort compensation for an applied payment."""
         import httpx
 
-        ref = ctx.get("referencia_ejecucion")
-        if not ref:
+        reference = ctx.get("execution_reference")
+        if not reference:
             return
         cid = ctx["correlationId"]
         try:
             httpx.post(
-                f"{self._base_url}/pagos/{ref}/reversa",
-                headers={"X-Correlation-Id": cid, "Idempotency-Key": f"{cid}:reversa"},
+                f"{self._base_url}/payments/{reference}/reversal",
+                headers={"X-Correlation-Id": cid, "Idempotency-Key": f"{cid}:reversal"},
                 timeout=self._timeout,
             )
         except httpx.HTTPError:
-            # La compensación best-effort; el motor registra COMPENSACION_FALLIDA.
             raise

@@ -1,35 +1,33 @@
-"""Proceso de ejemplo: "procesar pago".
+"""Example process: process a payment.
 
-Ensambla los pasos de la saga a partir de componentes reutilizables y de las
-capacidades de ejecución (inyectadas). Las capacidades de ejecución se inyectan
-para que el mismo flujo corra contra la API o contra el RPA sin cambios, y para
-que los tests usen fakes.
+Builds saga steps from reusable components and injected execution capabilities.
+The execution capability can be an API adapter, an RPA adapter, or a test fake
+without changing the process definition.
 
-Orden: validación -> ejecución (con compensación) -> registro (opcional) -> notificación
+Order: validation -> execution with compensation -> optional portal registration
+-> notification.
 """
 from __future__ import annotations
 
 from typing import Callable, Optional
 
-from components.notification import notificar
-from components.validation import validar_pago
+from components.notification import send_notification
+from components.validation import validate_payment
 from saga.models import Step
 
 Effect = Callable[[dict], Optional[dict]]
 
 
-def construir_flujo(
-    ejecutar_pago: Effect,
-    reversar_pago: Optional[Callable[[dict], None]] = None,
-    registrar_portal: Optional[Effect] = None,
+def build_payment_flow(
+    execute_payment: Effect,
+    reverse_payment: Optional[Callable[[dict], None]] = None,
+    register_in_portal: Optional[Effect] = None,
 ) -> list[Step]:
     steps: list[Step] = [
-        # Validación: función pura, sin efecto externo -> no requiere idempotencia.
-        Step("validacion", validar_pago, idempotent=False),
-        # Ejecución: efecto externo con compensación (reversa).
-        Step("ejecucion_pago", ejecutar_pago, compensate=reversar_pago, idempotent=True),
+        Step("validation", validate_payment, idempotent=False),
+        Step("payment_execution", execute_payment, compensate=reverse_payment, idempotent=True),
     ]
-    if registrar_portal is not None:
-        steps.append(Step("registro_portal", registrar_portal, idempotent=True))
-    steps.append(Step("notificacion", notificar, idempotent=False))
+    if register_in_portal is not None:
+        steps.append(Step("portal_registration", register_in_portal, idempotent=True))
+    steps.append(Step("notification", send_notification, idempotent=False))
     return steps

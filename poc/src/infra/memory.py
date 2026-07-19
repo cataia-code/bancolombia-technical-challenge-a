@@ -1,9 +1,4 @@
-"""Implementaciones en memoria de los puertos.
-
-Sirven para dos cosas: (1) que los tests corran sin infraestructura, y (2) que
-la PoC arranque en modo "sin infra". En docker-compose se sustituyen por las
-implementaciones Redis sin tocar el motor (ver `redis_infra.py`).
-"""
+"""In-memory implementations of the saga ports."""
 from __future__ import annotations
 
 import json
@@ -12,8 +7,6 @@ from typing import Any
 
 
 class InMemoryTracer:
-    """Guarda los eventos y, opcionalmente, los imprime como JSON estructurado."""
-
     def __init__(self, echo: bool = False) -> None:
         self.events: list[dict[str, Any]] = []
         self._echo = echo
@@ -51,8 +44,6 @@ class InMemoryIdempotencyStore:
 
 
 class ImmediateSleeper:
-    """No espera de verdad: registra los delays para poder afirmarlos en tests."""
-
     def __init__(self) -> None:
         self.delays: list[float] = []
 

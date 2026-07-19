@@ -11,6 +11,9 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
 .venv/
 venv/
 

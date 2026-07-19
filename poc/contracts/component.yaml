@@ -1,41 +1,39 @@
-# Manifiesto de componente reutilizable — entrada del catálogo.
-# Ejemplo concreto de un componente VERSIONADO con ownership, contrato,
-# consumidores (grafo de impacto), SLA y changelog con marcas de ruptura.
+# Reusable component manifest for the technical catalog.
 apiVersion: catalog/v1
 kind: Component
 metadata:
-  name: consulta-cliente
-  version: 2.3.1                 # SemVer MAJOR.MINOR.PATCH
-  owner: squad-clientes
-  contact: "#canal-clientes"
-  status: active                 # active | deprecated | retired
-  tags: [clientes, lectura, core]
+  name: customer-lookup
+  version: 2.3.1
+  owner: squad-customers
+  contact: "#customers-channel"
+  status: active
+  tags: [customers, read, core]
 spec:
-  description: Consulta datos básicos de un cliente por documento.
+  description: Retrieves basic customer data by document number.
   contract:
     type: openapi
     ref: ./openapi.yaml
-    operation: consultarCliente
-  consumers:                     # grafo de impacto: a quién rompo si cambio
-    - proceso-apertura-cuenta
-    - proceso-actualizacion-datos
-    - proceso-originacion-credito
+    operation: getCustomer
+  consumers:
+    - account-opening-process
+    - customer-data-update-process
+    - credit-origination-process
   sla:
     availability: "99.9%"
     p95_latency_ms: 300
   observability:
-    correlated: true             # propaga correlationId
-    metrics: [exito, latencia, reintentos]
+    correlated: true
+    metrics: [success, latency, retries]
   changelog:
     - version: 2.3.1
-      change: "fix en normalización de documento con guiones"
+      change: "Fixes document normalization for hyphenated values."
       breaking: false
     - version: 2.3.0
-      change: "agrega campo 'segmento' a la respuesta"
+      change: "Adds the response field 'segment'."
       breaking: false
     - version: 2.0.0
-      change: "cambia formato de respuesta (envelope)"
-      breaking: true             # requiere migración de consumidores + coexistencia
+      change: "Changes the response format to an envelope."
+      breaking: true
   deprecation:
     replaces: null
-    sunset: null                 # fecha de retiro cuando aplique
+    sunset: null

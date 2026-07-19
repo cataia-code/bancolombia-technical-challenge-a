@@ -8,12 +8,14 @@ Está diseñada con **puertos y adaptadores** (igual que la arquitectura propues
 
 | Comportamiento | Dónde se ve |
 | --- | --- |
-| Caso exitoso (entrada → validación → ejecución → salida) | `demo.py` esc. 1 / `test_flujo_pago_exitoso` |
-| Reintento ante fallo **transitorio** (backoff + jitter) | `demo.py` esc. 2 / `test_reintento_transitorio_luego_exito` |
-| Error **permanente** → no se reintenta → **DLQ** | `test_error_permanente...`, `test_reintentos_agotados_van_a_dlq` |
-| **Compensación** (rollback en orden inverso) | `demo.py` esc. 3 / `test_flujo_falla_tardia_compensa_el_pago` |
-| **Idempotencia** (no re-aplica efectos en reprocesos) | `test_idempotencia_evita_doble_efecto` |
-| **Trazabilidad** por `correlationId` (logs estructurados) | eventos INICIO/EJECUCION/REINTENTO/COMPENSACION/DLQ/SALIDA |
+| Caso exitoso (entrada → validación → ejecución → salida) | `demo.py` esc. 1 / `test_processes_payment_and_sends_notification_for_valid_payload` |
+| Reintento ante fallo **transitorio** (backoff + jitter) | `demo.py` esc. 2 / `test_retries_transient_failures_until_step_succeeds` |
+| Error **permanente** → no se reintenta → **DLQ** | `test_compensates_previous_steps_without_retrying_permanent_errors`, `test_sends_message_to_dlq_when_retries_are_exhausted` |
+| **Compensación** (rollback en orden inverso) | `demo.py` esc. 3 / `test_compensates_payment_when_later_portal_step_fails` |
+| **Idempotencia** (no re-aplica efectos en reprocesos) | `test_skips_idempotent_step_when_effect_was_already_applied` |
+| Adaptador API (HTTP → dominio) | `test_api_adapter.py`: headers, 4xx/5xx/timeout y reversal |
+| Apps e infraestructura | `test_orchestrator.py`, `test_mock_api.py`, `test_redis_infra.py`, `test_memory_infra.py` |
+| **Trazabilidad** por `correlationId` (logs estructurados) | eventos INPUT/START/EXECUTE/RETRY/COMPENSATE/DLQ/OUTPUT |
 
 ## Estructura
 
@@ -25,7 +27,7 @@ poc/
 │   ├── adapters/        # ApiAdapter (HTTP) y RpaAdapter (mock UI) — mismo puerto
 │   ├── infra/           # Fakes en memoria + implementaciones Redis + logging
 │   └── app/             # FastAPI: orchestrator (webhook) y mock_api (sistema destino)
-├── tests/               # 9 tests (motor + flujo), sin infraestructura
+├── tests/               # 38 tests con 100% coverage sobre src/
 ├── contracts/           # OpenAPI + AsyncAPI + manifiesto de componente versionado
 ├── demo.py              # Demo sin infra: imprime la traza de 3 escenarios
 ├── docker-compose.yml   # orquestador + mock-api + redis
@@ -35,17 +37,19 @@ poc/
 
 ## Contratos (`contracts/`)
 
-- **`openapi.yaml`** — API síncrona: webhook del orquestador + componente `consulta-cliente`.
+- **`openapi.yaml`** — API síncrona: webhook del orquestador + componente `customer-lookup`.
 - **`asyncapi.yaml`** — bus de eventos: canales de ejecución y **DLQ**, con `schemaVersion`, `idempotencyKey` (duplicados) y `orderingKey` (orden por `correlationId`).
-- **`component.yaml`** — manifiesto de un **componente versionado** (`consulta-cliente@2.3.1`): owner, SLA, consumidores (grafo de impacto) y changelog con marcas de ruptura (SemVer).
+- **`component.yaml`** — manifiesto de un **componente versionado** (`customer-lookup@2.3.1`): owner, SLA, consumidores (grafo de impacto) y changelog con marcas de ruptura (SemVer).
 
 ## Ejecutar
 
 ### 1) Tests (rápido, sin dependencias externas)
 
 ```bash
+# PowerShell from the repo root
+.\.venv\Scripts\Activate.ps1
 cd poc
-python -m pytest tests/ -q
+python -m pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=100
 ```
 
 ### 2) Demo de trazas (sin infraestructura)
@@ -57,7 +61,7 @@ python demo.py
 
 Imprime la traza JSON por `correlationId` del caso exitoso, del reintento transitorio y del error permanente con compensación + DLQ.
 
-### 3) Stack completo (docker-compose)
+### 3) Servicios completos (docker-compose)
 
 ```bash
 cd poc
@@ -69,21 +73,21 @@ En otra terminal:
 ```bash
 # Caso exitoso
 curl -s localhost:8000/webhook -H "content-type: application/json" \
-  -d '{"cuenta":"123","monto":100000,"modo":"ok"}' | jq
+  -d '{"account":"123","amount":100000,"mode":"ok"}' | jq
 
 # Fallo transitorio -> reintenta y termina OK
 curl -s localhost:8000/webhook -H "content-type: application/json" \
-  -d '{"cuenta":"123","monto":100000,"modo":"transitorio"}' | jq
+  -d '{"account":"123","amount":100000,"mode":"transient"}' | jq
 
 # Rechazo permanente -> compensación + DLQ
 curl -s localhost:8000/webhook -H "content-type: application/json" \
-  -d '{"cuenta":"123","monto":100000,"modo":"permanente"}' | jq
+  -d '{"account":"123","amount":100000,"mode":"permanent"}' | jq
 
 # Inspeccionar la DLQ
 curl -s localhost:8000/dlq | jq
 ```
 
-La respuesta incluye `correlationId`, `status`, `deadLettered`, `compensados` y la `trace` completa. Los logs estructurados salen por `stderr` de cada servicio.
+La respuesta incluye `correlationId`, `status`, `deadLettered`, `compensated`, `reference`, `account` y la `trace` completa. Tambien conserva aliases de compatibilidad (`compensados`, `referencia`, `cuenta`) para los ejemplos existentes. Los logs estructurados salen por `stderr` de cada servicio.
 
 ## Decisiones de diseño
 
@@ -97,7 +101,7 @@ La respuesta incluye `correlationId`, `status`, `deadLettered`, `compensados` y 
 Es una PoC local, pero incorpora controles proporcionados (coherentes con el bloque de seguridad de la propuesta):
 
 - **Autenticación:** el endpoint `/webhook` admite una **API key** por header `X-API-Key` cuando se define `POC_API_KEY` (stand-in de OAuth2/mTLS + gateway en producción). Sin la variable, corre en modo demo local.
-- **PII fuera de logs:** la cuenta se **enmascara** (solo últimos 4) y se traza un **hash del input**, no el dato. El adaptador no propaga el cuerpo crudo del sistema destino a logs/DLQ.
+- **PII fuera de logs:** el campo `account` se **enmascara** (solo últimos 4) y se traza un **hash del input**, no el dato. El adaptador no propaga el cuerpo crudo del sistema destino a logs/DLQ.
 - **Superficie mínima:** en `docker-compose` todos los puertos se publican solo en `127.0.0.1` (no accesibles desde la red).
 
 Con API key:
@@ -106,7 +110,7 @@ Con API key:
 # En docker-compose descomenta POC_API_KEY, o expórtala, y luego:
 curl -s localhost:8000/webhook -H "content-type: application/json" \
   -H "X-API-Key: cambia-esta-clave-local" \
-  -d '{"cuenta":"1234567","monto":100000,"modo":"ok"}' | jq
+  -d '{"account":"1234567","amount":100000,"mode":"ok"}' | jq
 ```
 
 ## Alcance

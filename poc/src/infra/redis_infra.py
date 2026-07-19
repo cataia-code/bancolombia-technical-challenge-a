@@ -1,8 +1,4 @@
-"""Implementaciones de los puertos respaldadas por Redis (para docker-compose).
-
-Sustituyen a las de memoria sin tocar el motor: DLQ como lista, idempotency
-store como set con TTL. `redis` se importa de forma perezosa.
-"""
+"""Redis-backed implementations of the saga ports."""
 from __future__ import annotations
 
 import json
@@ -10,7 +6,7 @@ from typing import Any
 
 
 class RedisDLQ:
-    def __init__(self, client, key: str = "dlq:pagos") -> None:
+    def __init__(self, client, key: str = "dlq:payments") -> None:
         self._r = client
         self._key = key
 
@@ -21,7 +17,7 @@ class RedisDLQ:
         return int(self._r.llen(self._key))
 
     def items(self) -> list[dict[str, Any]]:
-        return [json.loads(m) for m in self._r.lrange(self._key, 0, -1)]
+        return [json.loads(message) for message in self._r.lrange(self._key, 0, -1)]
 
 
 class RedisIdempotencyStore:
@@ -40,6 +36,6 @@ class RedisIdempotencyStore:
 
 
 def connect(url: str):
-    import redis  # import perezoso
+    import redis
 
     return redis.Redis.from_url(url, decode_responses=True)

@@ -1,62 +1,61 @@
 asyncapi: 2.6.0
 info:
-  title: Bus de eventos — Automatización
+  title: Event Bus - Automation
   version: 1.0.0
   description: >
-    Contrato del backbone event-driven. Aborda explícitamente lo que un bus real
-    exige: versionado de esquema, idempotencia (entrega at-least-once ⇒
-    duplicados), ordenamiento por clave de negocio y canal de dead-letter.
+    Reference contract for an event-driven backbone with schema versioning,
+    idempotency, ordering by correlationId, and a dead-letter channel.
 defaultContentType: application/json
 servers:
   local:
     url: localhost:6379
     protocol: redis
-    description: PoC (Redis). En producción, Kafka/RabbitMQ con particiones.
+    description: Local PoC. A production setup would use Kafka or RabbitMQ.
 channels:
-  ejecucion.eventos:
-    description: Eventos del ciclo de vida de una ejecución (correlacionados).
+  execution.events:
+    description: Correlated execution lifecycle events.
     parameters:
       orderingKey:
-        description: Clave de particionado/orden (garantiza orden por correlationId).
+        description: Partitioning and ordering key, usually correlationId.
         schema: { type: string }
     subscribe:
       message:
-        $ref: "#/components/messages/EventoEjecucion"
-  ejecucion.dlq:
-    description: Mensajes irrecuperables (fallo permanente o reintentos agotados).
+        $ref: "#/components/messages/ExecutionEvent"
+  execution.dlq:
+    description: Unrecoverable messages after permanent failures or exhausted retries.
     subscribe:
       message:
-        $ref: "#/components/messages/MensajeDLQ"
+        $ref: "#/components/messages/DeadLetterMessage"
 components:
   messages:
-    EventoEjecucion:
-      name: EventoEjecucion
+    ExecutionEvent:
+      name: ExecutionEvent
       headers:
         type: object
         required: [schemaVersion, correlationId, idempotencyKey]
         properties:
-          schemaVersion: { type: string, example: "1.0", description: "Versionado de evento; compatibilidad hacia atrás obligatoria." }
+          schemaVersion: { type: string, example: "1.0" }
           correlationId: { type: string, format: uuid }
-          idempotencyKey: { type: string, description: "El consumidor descarta duplicados por esta clave." }
+          idempotencyKey: { type: string }
       payload:
         type: object
         required: [event, correlationId]
         properties:
           event:
             type: string
-            enum: [ENTRADA, VALIDADO, EJECUCION, REINTENTO, COMPENSACION, DLQ, SALIDA]
+            enum: [INPUT, START, EXECUTE, RETRY, COMPENSATE, COMPENSATION_FAILED, DLQ, OUTPUT, SKIP_IDEMPOTENT]
           correlationId: { type: string, format: uuid }
-          proceso: { type: string, example: procesar_pago }
-          step: { type: string, example: ejecucion_pago }
-          inputHash: { type: string, description: "Hash del input; NUNCA PII en claro." }
-    MensajeDLQ:
-      name: MensajeDLQ
+          process: { type: string, example: process_payment }
+          step: { type: string, example: payment_execution }
+          inputHash: { type: string, description: "Input hash. Raw PII must never be logged." }
+    DeadLetterMessage:
+      name: DeadLetterMessage
       payload:
         type: object
-        required: [correlationId, proceso, failedStep, error]
+        required: [correlationId, process, failedStep, error]
         properties:
           correlationId: { type: string, format: uuid }
-          proceso: { type: string }
+          process: { type: string }
           failedStep: { type: string }
           error: { type: string }
-          tipo: { type: string, enum: [PermanentError, TransientError] }
+          errorType: { type: string, enum: [PermanentError, TransientError] }

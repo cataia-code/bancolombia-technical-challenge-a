@@ -43,7 +43,8 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 │       └── vendor/               # Mermaid empaquetado localmente (sin CDN)
 ├── poc/                          # PoC ejecutable: saga, reintentos, DLQ, compensación
 │   ├── src/                      # motor, componentes, adaptadores, infra, app (FastAPI)
-│   ├── tests/                    # 9 tests (motor + flujo)
+│   ├── tests/                    # 38 tests con 100% coverage sobre poc/src
+│   ├── contracts/                # OpenAPI, AsyncAPI y manifiesto de componente
 │   ├── demo.py                   # demo de trazas sin infraestructura
 │   └── docker-compose.yml        # orquestador + mock-api + redis
 ├── challenge/
@@ -58,13 +59,15 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 Materializa el patrón técnico de la propuesta (Pregunta 12): saga con **reintentos + backoff**, **compensación** (rollback), **DLQ**, **idempotencia** y **trazabilidad por `correlationId`**. Diseñada con puertos y adaptadores.
 
 ```bash
+# PowerShell from the repo root
+.\.venv\Scripts\Activate.ps1
 cd poc
-python -m pytest tests/ -q     # 9 tests (motor + flujo)
+python -m pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=100
 python demo.py                 # traza de 3 escenarios sin infraestructura
 docker compose up --build      # stack completo: orquestador + mock-api + redis
 ```
 
-Ver [`poc/README.md`](poc/README.md) para el detalle y los `curl` de ejemplo.
+Ver [`poc/README.md`](poc/README.md) para el detalle y los `curl` de ejemplo. Los contratos de referencia están en [`poc/contracts/`](poc/contracts/): API síncrona, eventos asíncronos y manifiesto de componente versionado.
 
 ---
 
@@ -84,17 +87,16 @@ npx serve docs
 
 ---
 
-## Despliegue (CI/CD)
+## Despliegue
 
-El workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) se ejecuta en cada `push` a `main`:
+El workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publica `docs/` en GitHub Pages después de verificar el sitio y correr la PoC. La concurrencia cancela despliegues anteriores en curso y, al terminar, limpia deployments históricos para conservar solo el último de `github-pages`.
 
-1. **verify** — comprueba que exista `docs/index.html` y el logo, valida el HTML y las referencias a assets.
-2. **build** — empaqueta la carpeta `docs/` como artefacto de Pages.
-3. **deploy** — publica en GitHub Pages.
+Validaciones principales:
 
-### Habilitar Pages (una sola vez)
-
-En el repositorio → **Settings → Pages → Build and deployment → Source: GitHub Actions**. Tras el primer push a `main`, el sitio queda disponible en la URL de Pages.
+- estructura y referencias locales de `docs/`
+- HTML sin errores estructurales graves
+- tests de la PoC con 100% de coverage sobre `poc/src`
+- `docker compose config` de la PoC
 
 ---
 
@@ -107,12 +109,6 @@ En el repositorio → **Settings → Pages → Build and deployment → Source: 
 - **Gobierno:** catálogo versionado y política *reuse-first* con *fitness functions* de duplicación.
 
 El detalle y las alternativas descartadas están en la sección **ADRs** del sitio.
-
----
-
-## Stack
-
-Sitio estático autocontenido: **HTML + CSS + JavaScript vanilla**, diagramas con **Mermaid**, tipografía Open Sans. Sin build step. Identidad visual alineada a Bancolombia (azul oscuro `#2C2A29`, amarillo `#FDDA24`, fondo blanco).
 
 ---
 

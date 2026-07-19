@@ -1,20 +1,19 @@
 openapi: 3.0.3
 info:
-  title: Plataforma de Automatización — API síncrona
+  title: Automation Platform - Synchronous API
   version: 1.0.0
   description: >
-    Contrato mínimo del orquestador (disparador webhook) y de un componente
-    reutilizable de ejemplo (consulta-cliente). Los procesos consumen los
-    componentes por este contrato estable; romper compatibilidad implica un
-    MAJOR y ventana de coexistencia.
+    Minimal reference contract for the orchestrator webhook and a reusable
+    customer lookup component. The PoC accepts Spanish field aliases for the
+    challenge examples, while the canonical technical names are English.
 servers:
   - url: http://localhost:8000
-    description: PoC local (orquestador)
+    description: Local PoC orchestrator
 paths:
   /webhook:
     post:
-      operationId: procesarPago
-      summary: Dispara el proceso "procesar_pago" (saga con reintentos/compensación).
+      operationId: processPayment
+      summary: Runs the process_payment saga with retries and compensation.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -22,22 +21,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PagoRequest"
+              $ref: "#/components/schemas/PaymentRequest"
       responses:
         "200":
-          description: Resultado de la ejecución (éxito o fallo controlado).
+          description: Controlled execution result.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EjecucionResult"
+                $ref: "#/components/schemas/ExecutionResult"
         "401":
-          description: API key inválida o ausente.
-  /clientes/{documento}:
+          description: API key is invalid or missing.
+  /customers/{document}:
     get:
-      operationId: consultarCliente
-      summary: Componente reutilizable "consulta-cliente@2.3.1".
+      operationId: getCustomer
+      summary: Reusable component "customer-lookup@2.3.1".
       parameters:
-        - name: documento
+        - name: document
           in: path
           required: true
           schema: { type: string, example: "1020304050" }
@@ -47,12 +46,12 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         "200":
-          description: Datos básicos del cliente.
+          description: Basic customer data.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Cliente"
-        "404": { description: Cliente no encontrado (error permanente). }
+                $ref: "#/components/schemas/Customer"
+        "404": { description: Customer was not found. }
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -60,30 +59,37 @@ components:
       in: header
       name: X-API-Key
   schemas:
-    PagoRequest:
+    PaymentRequest:
       type: object
-      required: [cuenta, monto]
+      required: [account, amount]
       properties:
-        cuenta: { type: string, example: "1234567", description: "Se enmascara en logs/traza." }
-        monto: { type: number, minimum: 0.01, maximum: 50000000, example: 100000 }
-        modo:
+        account: { type: string, example: "1234567", description: "Masked in logs and traces." }
+        amount: { type: number, minimum: 0.01, maximum: 50000000, example: 100000 }
+        mode:
           type: string
-          enum: [ok, transitorio, permanente]
+          enum: [ok, transient, permanent]
           default: ok
-          description: "Solo PoC: fuerza el comportamiento del sistema destino simulado."
-    EjecucionResult:
+          description: "PoC-only switch that forces the mock target behavior."
+        cuenta: { type: string, deprecated: true, description: "Legacy alias for account." }
+        monto: { type: number, deprecated: true, description: "Legacy alias for amount." }
+        modo: { type: string, deprecated: true, description: "Legacy alias for mode." }
+    ExecutionResult:
       type: object
       properties:
         correlationId: { type: string, format: uuid }
         status: { type: string, enum: [OK, FAILED] }
         deadLettered: { type: boolean }
-        compensados: { type: array, items: { type: string } }
+        compensated: { type: array, items: { type: string } }
         error: { type: string, nullable: true }
-        referencia: { type: string, nullable: true }
-        cuenta: { type: string, example: "***4567", description: "PII enmascarada." }
-    Cliente:
+        reference: { type: string, nullable: true }
+        account: { type: string, example: "***4567", description: "Masked PII." }
+        trace: { type: array, items: { type: object } }
+        compensados: { type: array, deprecated: true, items: { type: string } }
+        referencia: { type: string, deprecated: true, nullable: true }
+        cuenta: { type: string, deprecated: true, example: "***4567" }
+    Customer:
       type: object
       properties:
-        documento: { type: string }
-        nombre: { type: string }
-        segmento: { type: string, enum: [personas, pyme, empresas] }
+        document: { type: string }
+        name: { type: string }
+        segment: { type: string, enum: [personal, smb, enterprise] }

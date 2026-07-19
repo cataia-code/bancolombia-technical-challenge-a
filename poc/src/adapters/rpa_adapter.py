@@ -1,9 +1,8 @@
-"""Adaptador RPA de borde (mock).
+"""Edge RPA adapter used when the target system has no API.
 
-Representa el caso "sin API": se automatiza una UI. Es intencionalmente frágil
-—como el RPA real— y modela fallos transitorios (la pantalla no cargó a tiempo).
-Se usa solo cuando no hay API; detrás del mismo puerto que `ApiAdapter`, así el
-proceso no sabe si habla con API o con RPA.
+The adapter sits behind the same callable shape as `ApiAdapter`, so the process
+does not need to know whether the effect is executed through HTTP or UI
+automation.
 """
 from __future__ import annotations
 
@@ -13,13 +12,12 @@ from saga.errors import TransientError
 
 
 class RpaAdapter:
-    def __init__(self, fallos_transitorios: int = 0) -> None:
-        # nº de veces que "la UI no responde" antes de estabilizarse
-        self._fallos_pendientes = fallos_transitorios
+    def __init__(self, transient_failures: int = 0) -> None:
+        self._pending_failures = transient_failures
 
-    def registrar_en_portal(self, ctx: dict[str, Any]) -> dict[str, Any]:
-        if self._fallos_pendientes > 0:
-            self._fallos_pendientes -= 1
-            raise TransientError("la pantalla del portal no respondió a tiempo")
-        ref = ctx.get("referencia_ejecucion", "SIN-REF")
-        return {"registrado_en_portal": True, "portal_ref": f"PORTAL-{ref}"}
+    def register_in_portal(self, ctx: dict[str, Any]) -> dict[str, Any]:
+        if self._pending_failures > 0:
+            self._pending_failures -= 1
+            raise TransientError("the portal screen did not respond in time")
+        reference = ctx.get("execution_reference", "NO-REF")
+        return {"registered_in_portal": True, "portal_ref": f"PORTAL-{reference}"}

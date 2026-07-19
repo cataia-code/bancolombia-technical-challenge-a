@@ -1,8 +1,11 @@
-"""Tests del flujo de ejemplo "procesar pago" con fakes (sin infraestructura)."""
+"""Tests for the example payment flow with in-memory fakes."""
 import random
 
+import pytest
+
 from adapters.rpa_adapter import RpaAdapter
-from flow import construir_flujo
+from components.validation import validate_payment
+from flow import build_payment_flow
 from infra.memory import (
     ImmediateSleeper,
     InMemoryDLQ,
@@ -15,78 +18,97 @@ from saga.errors import PermanentError
 
 def _engine():
     engine = SagaEngine(
-        InMemoryTracer(), InMemoryDLQ(), InMemoryIdempotencyStore(),
-        ImmediateSleeper(), max_retries=3, base_delay=0.05, rng=random.Random(1),
+        InMemoryTracer(),
+        InMemoryDLQ(),
+        InMemoryIdempotencyStore(),
+        ImmediateSleeper(),
+        max_retries=3,
+        base_delay=0.05,
+        rng=random.Random(1),
     )
     return engine
 
 
-def _pago_ok(ctx):
-    return {"referencia_ejecucion": "PAY-001", "aplicado": True}
+def _successful_payment(ctx):
+    return {"execution_reference": "PAY-001", "applied": True}
 
 
-def test_flujo_pago_exitoso():
+def test_processes_payment_and_sends_notification_for_valid_payload():
     engine = _engine()
-    steps = construir_flujo(ejecutar_pago=_pago_ok)
-    ctx = {"correlationId": "cid-ok", "payload": {"cuenta": "123", "monto": 100_000}}
+    steps = build_payment_flow(execute_payment=_successful_payment)
+    ctx = {"correlationId": "cid-ok", "payload": {"account": "123", "amount": 100_000}}
 
-    result = engine.run("procesar_pago", steps, ctx)
+    result = engine.run("process_payment", steps, ctx)
 
     assert result.ok
-    assert ctx["validado"] is True
-    assert ctx["referencia_ejecucion"] == "PAY-001"
-    assert ctx["notificado"] is True
+    assert ctx["validated"] is True
+    assert ctx["execution_reference"] == "PAY-001"
+    assert ctx["notified"] is True
 
 
-def test_flujo_con_rpa_transitorio_reintenta_y_termina():
+def test_retries_rpa_registration_and_completes_flow():
     engine = _engine()
-    rpa = RpaAdapter(fallos_transitorios=2)  # la UI falla 2 veces y luego responde
-    steps = construir_flujo(
-        ejecutar_pago=_pago_ok, registrar_portal=rpa.registrar_en_portal
+    rpa = RpaAdapter(transient_failures=2)
+    steps = build_payment_flow(
+        execute_payment=_successful_payment,
+        register_in_portal=rpa.register_in_portal,
     )
-    ctx = {"correlationId": "cid-rpa", "payload": {"cuenta": "123", "monto": 50_000}}
+    ctx = {"correlationId": "cid-rpa", "payload": {"account": "123", "amount": 50_000}}
 
-    result = engine.run("procesar_pago", steps, ctx)
+    result = engine.run("process_payment", steps, ctx)
 
     assert result.ok
-    assert ctx["registrado_en_portal"] is True
+    assert ctx["registered_in_portal"] is True
     assert ctx["portal_ref"] == "PORTAL-PAY-001"
 
 
-def test_flujo_validacion_invalida_es_permanente():
+def test_sends_invalid_payment_to_dlq_without_compensation():
     engine = _engine()
-    steps = construir_flujo(ejecutar_pago=_pago_ok)
-    ctx = {"correlationId": "cid-bad", "payload": {"cuenta": "123", "monto": -5}}
+    steps = build_payment_flow(execute_payment=_successful_payment)
+    ctx = {"correlationId": "cid-bad", "payload": {"account": "123", "amount": -5}}
 
-    result = engine.run("procesar_pago", steps, ctx)
+    result = engine.run("process_payment", steps, ctx)
 
     assert not result.ok
-    assert result.failed_step == "validacion"
+    assert result.failed_step == "validation"
     assert result.dead_lettered
-    assert result.compensated_steps == []  # nada se había ejecutado aún
+    assert result.compensated_steps == []
 
 
-def test_flujo_falla_tardia_compensa_el_pago():
+def test_compensates_payment_when_later_portal_step_fails():
     engine = _engine()
-    reversas = {"n": 0}
+    reversals = {"count": 0}
 
-    def reversar(_ctx):
-        reversas["n"] += 1
+    def reverse_payment(_ctx):
+        reversals["count"] += 1
 
-    def portal_permanente(_ctx):
-        raise PermanentError("el portal rechazó el registro")
+    def permanently_failing_portal(_ctx):
+        raise PermanentError("portal rejected the registration")
 
-    steps = construir_flujo(
-        ejecutar_pago=_pago_ok,
-        reversar_pago=reversar,
-        registrar_portal=portal_permanente,
+    steps = build_payment_flow(
+        execute_payment=_successful_payment,
+        reverse_payment=reverse_payment,
+        register_in_portal=permanently_failing_portal,
     )
-    ctx = {"correlationId": "cid-comp", "payload": {"cuenta": "123", "monto": 100}}
+    ctx = {"correlationId": "cid-comp", "payload": {"account": "123", "amount": 100}}
 
-    result = engine.run("procesar_pago", steps, ctx)
+    result = engine.run("process_payment", steps, ctx)
 
     assert not result.ok
-    assert result.failed_step == "registro_portal"
-    assert reversas["n"] == 1                         # el pago se reversó
-    assert result.compensated_steps == ["ejecucion_pago"]
+    assert result.failed_step == "portal_registration"
+    assert reversals["count"] == 1
+    assert result.compensated_steps == ["payment_execution"]
     assert result.dead_lettered
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ({"amount": 100}, "account is required"),
+        ({"account": "123", "amount": "100"}, "amount must be"),
+        ({"account": "123", "amount": 50_000_001}, "amount exceeds"),
+    ],
+)
+def test_rejects_invalid_payment_payloads(payload, message):
+    with pytest.raises(PermanentError, match=message):
+        validate_payment({"payload": payload})

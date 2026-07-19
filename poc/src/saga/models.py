@@ -1,21 +1,16 @@
-"""Modelos del motor de saga: paso, resultado y contexto de ejecución."""
+"""Saga engine data models."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-# Un paso ejecuta un efecto y devuelve datos que se fusionan al contexto.
 StepFn = Callable[[dict[str, Any]], Optional[dict[str, Any]]]
 CompensateFn = Callable[[dict[str, Any]], None]
 
 
 @dataclass
 class Step:
-    """Un paso de la saga con su compensación opcional.
-
-    `idempotent=True` hace que el motor consulte el idempotency store antes de
-    re-aplicar el efecto (clave ante reintentos y reprocesos desde la cola).
-    """
+    """A saga step with optional compensation."""
 
     name: str
     execute: StepFn
@@ -25,7 +20,7 @@ class Step:
 
 @dataclass
 class SagaResult:
-    status: str  # "OK" | "FAILED"
+    status: str
     correlation_id: str
     context: dict[str, Any]
     compensated_steps: list[str] = field(default_factory=list)
