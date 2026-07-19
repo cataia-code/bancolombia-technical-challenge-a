@@ -39,7 +39,8 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 ├── docs/                         # Sitio estático (fuente de GitHub Pages)
 │   ├── index.html                # Aplicación de una sola página (SPA) autocontenida
 │   └── assets/
-│       └── logo-bancolombia.svg  # Isotipo + wordmark oficial
+│       ├── images/               # Logos Bancolombia (svg wordmark + png isotipo/favicon)
+│       └── vendor/               # Mermaid empaquetado localmente (sin CDN)
 ├── poc/                          # PoC ejecutable: saga, reintentos, DLQ, compensación
 │   ├── src/                      # motor, componentes, adaptadores, infra, app (FastAPI)
 │   ├── tests/                    # 9 tests (motor + flujo)

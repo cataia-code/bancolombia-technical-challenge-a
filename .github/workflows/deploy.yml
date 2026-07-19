@@ -29,7 +29,8 @@ jobs:
       - name: Estructura esperada existe
         run: |
           test -f docs/index.html || { echo "Falta docs/index.html"; exit 1; }
-          test -f docs/assets/logo-bancolombia.svg || { echo "Falta el logo"; exit 1; }
+          test -f docs/assets/images/logo-bancolombia.svg || { echo "Falta el logo"; exit 1; }
+          test -f docs/assets/vendor/mermaid.min.js || { echo "Falta mermaid vendorizado"; exit 1; }
           echo "Estructura OK"
 
       - name: HTML bien formado (validación ligera)
@@ -44,7 +45,8 @@ jobs:
 
       - name: Enlaces internos a assets existen
         run: |
-          grep -q 'assets/logo-bancolombia.svg' docs/index.html || { echo "El index no referencia el logo"; exit 1; }
+          grep -q 'assets/images/logo-bancolombia.svg' docs/index.html || { echo "El index no referencia el logo"; exit 1; }
+          grep -q 'assets/vendor/mermaid.min.js' docs/index.html || { echo "El index no referencia mermaid local"; exit 1; }
           echo "Referencias OK"
 
   # ---- Build del artefacto de Pages ----
