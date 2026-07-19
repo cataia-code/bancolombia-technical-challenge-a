@@ -39,7 +39,9 @@ class ApiAdapter:
         if resp.status_code >= 500:
             raise TransientError(f"sistema destino 5xx: {resp.status_code}")
         if resp.status_code >= 400:
-            raise PermanentError(f"rechazo de negocio {resp.status_code}: {resp.text}")
+            # No se propaga el cuerpo crudo del sistema destino: puede contener PII
+            # y terminaría en logs/DLQ. Solo el código de estado.
+            raise PermanentError(f"rechazo de negocio {resp.status_code}")
 
         data = resp.json()
         return {"referencia_ejecucion": data.get("referencia"), "aplicado": True}

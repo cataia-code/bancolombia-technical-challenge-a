@@ -1,10 +1,14 @@
 name: reto-poc
 
+# PoC LOCAL. Todos los puertos se publican solo en 127.0.0.1 (no accesibles
+# desde la red). No está endurecida para exposición: en producción irían tras
+# un gateway con OAuth2/mTLS, Redis con auth/TLS y secretos en vault.
+
 services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -15,7 +19,7 @@ services:
     build: .
     command: uvicorn app.mock_api:app --host 0.0.0.0 --port 8000
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
@@ -28,8 +32,10 @@ services:
     environment:
       MOCK_API_URL: http://mock-api:8000
       REDIS_URL: redis://redis:6379/0
+      # Descomenta para exigir API key en /webhook (stand-in de OAuth2/mTLS):
+      # POC_API_KEY: cambia-esta-clave-local
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       redis:
         condition: service_healthy

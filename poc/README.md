@@ -85,6 +85,23 @@ La respuesta incluye `correlationId`, `status`, `deadLettered`, `compensados` y 
 - **Compensación** en orden inverso porque en sistemas distribuidos no hay transacción ACID global (patrón saga).
 - **Puertos y adaptadores**: el motor es agnóstico de infraestructura → alta testabilidad y portabilidad (mismo código con Redis o en memoria).
 
+## Seguridad de la PoC
+
+Es una PoC local, pero incorpora controles proporcionados (coherentes con el bloque de seguridad de la propuesta):
+
+- **Autenticación:** el endpoint `/webhook` admite una **API key** por header `X-API-Key` cuando se define `POC_API_KEY` (stand-in de OAuth2/mTLS + gateway en producción). Sin la variable, corre en modo demo local.
+- **PII fuera de logs:** la cuenta se **enmascara** (solo últimos 4) y se traza un **hash del input**, no el dato. El adaptador no propaga el cuerpo crudo del sistema destino a logs/DLQ.
+- **Superficie mínima:** en `docker-compose` todos los puertos se publican solo en `127.0.0.1` (no accesibles desde la red).
+
+Con API key:
+
+```bash
+# En docker-compose descomenta POC_API_KEY, o expórtala, y luego:
+curl -s localhost:8000/webhook -H "content-type: application/json" \
+  -H "X-API-Key: cambia-esta-clave-local" \
+  -d '{"cuenta":"1234567","monto":100000,"modo":"ok"}' | jq
+```
+
 ## Alcance
 
-Es una PoC de **patrón**, no un producto: sin auth real, persistencia mínima (Redis) y un solo proceso de ejemplo. La propuesta describe cómo se llevaría a producción (event store, OpenAPI/AsyncAPI, vault, OTel, dashboards, RBAC, etc.).
+Es una PoC de **patrón**, no un producto: auth simplificada, persistencia mínima (Redis sin auth/TLS) y un solo proceso de ejemplo. La propuesta describe cómo se lleva a producción (event store, OpenAPI/AsyncAPI, vault con rotación, OTel, dashboards, RBAC/SoD, Redis con auth/TLS, etc.).

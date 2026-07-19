@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Propuesta técnica — Evolución de una operación RPA hacia una arquitectura modular evolutiva. Prueba Técnica A · Bancolombia.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%232C2A29'/%3E%3Cpath d='M9 24 L20 12 L31 24 Z' fill='%23FDDA24'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="assets/LogoBancolombia.png">
 <title>Propuesta Técnica — Evolución de RPA · Bancolombia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="assets/vendor/mermaid.min.js"></script>
 <script>
   window.__initMermaid = function(){
     if(!window.mermaid) return;
@@ -439,14 +439,6 @@ blockquote{margin:16px 0}
       </table></div>
       <p style="font-size:12.5px;color:var(--muted)">Cada supuesto se valida en la Ola 0 (discovery). No se bloquea la propuesta: se avanza con la hipótesis y se corrige con datos.</p>
 
-      <h2>Preguntas abiertas al evaluador</h2>
-      <ol>
-        <li>¿Cuál es el <strong>presupuesto y capacidad de squads</strong> disponibles hasta 2027? Determina el número de olas paralelas.</li>
-        <li>¿Existe ya un <strong>estándar corporativo</strong> de BPM / iPaaS / cloud, o el candidato lo propone libremente?</li>
-        <li>¿Qué procesos son <strong>críticos regulatorios</strong> (SOX, SFC, protección de datos) y por tanto no pueden migrar sin doble corrida?</li>
-        <li>¿La licencia de Automation Anywhere tiene una <strong>fecha/costo de corte</strong> que fije la ruta crítica?</li>
-        <li>¿Hay tolerancia a mantener un <strong>RPA selectivo</strong> de proveedor alterno (p. ej. open source) o el objetivo es cero RPA?</li>
-      </ol>
     </section>
 
     <!-- ==================== BLOQUE A ==================== -->
@@ -975,8 +967,8 @@ flowchart TD
         <span class="q-tag">Pregunta 18</span>
         <h3>Explicar a negocio por qué un caso no debe seguir automatizándose por UI</h3>
         <p>Traduzco lo técnico a <strong>riesgo y costo que el negocio siente</strong>, sin jerga:</p>
-        <blockquote class="callout"><p>"Automatizar sobre la pantalla funciona hasta que la pantalla cambia. Cada actualización del sistema puede romper el proceso sin aviso, y eso significa <strong>paradas no planeadas y retrabajo</strong>. Al conectarnos por la vía integrada (híbrida), el proceso deja de depender de cómo se ve la pantalla: es más estable, más rápido y auditable. Mantener la UI aquí es como construir sobre arena: barato hoy, caro cada vez que tiembla."</p></blockquote>
-        <p>Acompaño con datos: histórico de fallas por cambios de UI, tiempo perdido y el costo de oportunidad. La decisión se presenta como <strong>reducción de riesgo</strong>, no como capricho técnico.</p>
+        <blockquote class="callout"><p>"Hoy este proceso opera sobre la pantalla del sistema. Funciona, pero depende de que esa pantalla no cambie, y su actualización no está en nuestras manos: cuando el proveedor la modifica, el proceso puede fallar sin aviso y eso se traduce en <strong>interrupciones y trabajo manual</strong> para corregir. Si lo conectamos por la vía integrada del sistema, deja de depender de cómo se ve la pantalla: gana estabilidad, es más rápido y queda trazable para auditoría. Implica una inversión inicial mayor, pero reduce el riesgo operativo de forma sostenida; por eso recomiendo llevarlo a una solución híbrida."</p></blockquote>
+        <p>Acompaño la conversación con datos concretos —histórico de fallas por cambios de UI, horas invertidas en corregirlas y su costo— para que la decisión se entienda como una <strong>reducción de riesgo con retorno claro</strong>, no como una preferencia técnica.</p>
       </article>
 
       <article class="q" id="q19">
@@ -1227,7 +1219,7 @@ flowchart TB
     <section class="page" id="review" data-title="Revisión crítica">
       <div class="eyebrow">QA · Revisión de diseño</div>
       <h1>Revisión crítica</h1>
-      <p class="lede">Autoevaluación honesta de la propuesta: fortalezas, límites conocidos y qué se mejoraría con más tiempo.</p>
+      <p class="lede">Autoevaluación de la propuesta con criterio de revisor: qué resuelve bien, qué límites tiene y qué haría en una siguiente iteración. Las calificaciones son una referencia propia —no una nota oficial— para mostrar dónde está la solución y hacia dónde puede crecer.</p>
 
       <div class="grid grid-2">
         <div class="card"><h4>¿Cumple el reto?</h4><p>Sí: responde las 20 preguntas de los 5 bloques con criterio y las aterriza en arquitectura, diagramas y decisiones. El foco está en el objetivo real (desmontar el core sin heredar deuda), no en producir código por producirlo.</p></div>
