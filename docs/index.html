@@ -81,7 +81,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--body);font-family:var(--sans);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--body);font-family:var(--sans);font-size:15px;line-height:1.58;-webkit-font-smoothing:antialiased}
 a{color:var(--dark)}
 main a:not(.btn):not([class*="pill"]){text-decoration:underline;text-decoration-color:var(--yellow-deep);text-underline-offset:2px}
 main a:hover{text-decoration-thickness:2px}
@@ -104,7 +104,7 @@ main a:hover{text-decoration-thickness:2px}
 .brand-logo{height:30px;width:auto;display:block}
 .brand .word{font-size:23px;font-weight:800;color:var(--dark);letter-spacing:-.6px}
 .mainnav{display:flex;gap:26px;align-items:center;margin:0 auto}
-.mainnav a{color:var(--dark);font-size:15px;font-weight:600;text-decoration:none;padding:6px 2px;cursor:pointer}
+.mainnav a{color:var(--dark);font-size:14px;font-weight:600;text-decoration:none;padding:6px 2px;cursor:pointer}
 .mainnav a:hover{color:#000}
 .hdr-actions{display:flex;align-items:center;gap:12px;flex:0 0 auto}
 .pill-dark{background:var(--dark);color:#fff;border:0;border-radius:100px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
@@ -118,7 +118,7 @@ main a:hover{text-decoration-thickness:2px}
 /* ---------- Subnav (tabs de secciones) ---------- */
 .subnav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:var(--hdr-h);z-index:24}
 .subnav-in{max-width:1400px;margin:0 auto;display:flex;gap:2px;padding:0 20px;overflow-x:auto;scrollbar-width:thin}
-.subnav a{white-space:nowrap;padding:14px 16px;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;border-bottom:3px solid transparent;cursor:pointer;display:flex;gap:8px;align-items:center}
+.subnav a{white-space:nowrap;padding:13px 15px;color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;border-bottom:3px solid transparent;cursor:pointer;display:flex;gap:8px;align-items:center}
 .subnav a .ix{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px}
 .subnav a:hover{color:var(--dark)}
 .subnav a.active{color:var(--dark);border-bottom-color:var(--yellow)}
@@ -131,13 +131,13 @@ main{min-width:0}
 .page.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.eyebrow{font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--yellow-deep);font-weight:700}
-h1{font-size:46px;line-height:1.08;letter-spacing:-1.2px;margin:.3em 0 .3em;color:var(--ink);font-weight:800;text-wrap:balance}
-h2{font-size:27px;letter-spacing:-.6px;color:var(--ink);margin:2.2em 0 .5em;font-weight:800;text-wrap:balance;scroll-margin-top:150px}
-h3{font-size:19px;color:var(--ink);margin:1.7em 0 .4em;font-weight:700}
-h4{font-size:12.5px;letter-spacing:.6px;color:var(--dark);text-transform:uppercase;margin:1.4em 0 .3em;font-weight:700}
+.eyebrow{font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--yellow-deep);font-weight:700}
+h1{font-size:36px;line-height:1.1;letter-spacing:-1px;margin:.3em 0 .3em;color:var(--ink);font-weight:800;text-wrap:balance}
+h2{font-size:22px;letter-spacing:-.5px;color:var(--ink);margin:2.1em 0 .5em;font-weight:800;text-wrap:balance;scroll-margin-top:150px}
+h3{font-size:16.5px;color:var(--ink);margin:1.6em 0 .4em;font-weight:700}
+h4{font-size:11.5px;letter-spacing:.6px;color:var(--dark);text-transform:uppercase;margin:1.4em 0 .3em;font-weight:700}
 p{margin:.55em 0}
-.lede{font-size:19px;line-height:1.55;color:var(--muted);max-width:70ch}
+.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:72ch}
 ul,ol{padding-left:22px;margin:.5em 0}
 li{margin:.28em 0}
 strong{color:var(--ink);font-weight:700}
@@ -145,14 +145,14 @@ hr{border:0;border-top:1px solid var(--line);margin:34px 0}
 code{font-family:var(--mono);font-size:.84em;background:var(--surface);padding:1.5px 6px;border-radius:5px;color:var(--dark)}
 
 /* Hero */
-.hero{background:var(--surface);border-radius:16px;padding:44px 40px;margin:26px 0 10px}
+.hero{background:var(--surface);border-radius:16px;padding:38px 36px;margin:24px 0 10px}
 .hero h1{margin-top:.15em}
 @media(max-width:640px){.hero{padding:28px 22px}}
 
 /* Question block */
 .q{scroll-margin-top:150px;border-top:1px solid var(--line);padding-top:10px;margin-top:36px}
-.q-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#fff;background:var(--dark);padding:5px 12px;border-radius:60px;letter-spacing:.3px;font-weight:700;text-transform:uppercase}
-.q h3{margin-top:.5em;font-size:20px}
+.q-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;color:#fff;background:var(--dark);padding:4px 11px;border-radius:60px;letter-spacing:.3px;font-weight:700;text-transform:uppercase}
+.q h3{margin-top:.5em;font-size:17.5px}
 
 /* Cards & callouts */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin:18px 0}
@@ -170,14 +170,14 @@ code{font-family:var(--mono);font-size:.84em;background:var(--surface);padding:1
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
 @media(max-width:820px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-top:4px solid var(--yellow)}
-.kpi .n{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px;font-weight:600}
+.kpi .n{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px;font-weight:600}
 
 /* Tables */
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:18px 0;box-shadow:var(--shadow)}
-table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
-th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-thead th{background:var(--dark);color:#fff;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;position:sticky;top:0;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{background:var(--dark);color:#fff;font-size:11px;letter-spacing:.4px;text-transform:uppercase;position:sticky;top:0;font-weight:700}
 tbody tr:hover{background:var(--surface)}
 td .mono,th .mono{font-family:var(--mono)}
 .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:60px;font-weight:700;white-space:nowrap}
@@ -236,9 +236,9 @@ blockquote{margin:16px 0}
   .ubar-right{gap:12px;padding-right:14px}
 }
 @media(max-width:640px){
-  h1{font-size:33px}
+  h1{font-size:27px}
   .pill-dark{display:none}
-  .hero{margin:18px 0}
+  .hero{margin:18px 0;padding:26px 20px}
 }
 :focus-visible{outline:2px solid var(--yellow-deep);outline-offset:2px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -521,13 +521,13 @@ flowchart TB
   end
   subgraph ORq["Plano de Orquestacion"]
     ORQ["Orquestador de procesos<br/>(BPM / n8n)"]:::core
-    Q[["Cola de trabajo<br/>(mensajeria)"]]:::infra
+    Q[["Bus de eventos<br/>(mensajeria)"]]:::infra
   end
-  subgraph CAP["Capa de Capacidades reutilizables"]
-    C1["Componente:<br/>Validacion"]:::cap
-    C2["Componente:<br/>Consulta cliente"]:::cap
-    C3["Componente:<br/>Notificacion"]:::cap
-    MS["Microservicio de<br/>dominio (selectivo)"]:::cap
+  subgraph CAP["Capacidades (servicios desplegables por separado)"]
+    C1["Servicio:<br/>Validacion"]:::cap
+    C2["Servicio:<br/>Consulta cliente"]:::cap
+    C3["Servicio:<br/>Notificacion"]:::cap
+    MS["Servicio de<br/>dominio (selectivo)"]:::cap
   end
   subgraph INT["Capa de Integracion (Adaptadores)"]
     A1["API / iPaaS"]:::adp
@@ -560,7 +560,7 @@ flowchart TB
   classDef sys fill:#f4f4f4,stroke:#6b7075,color:#33414f;
   classDef gov fill:#eafaf1,stroke:#1e8e5a,color:#155e3b;
           </pre></div>
-          <figcaption>La lógica de negocio vive en <strong>componentes de capacidad</strong>; la orquestación solo coordina; los sistemas externos se tocan únicamente por <strong>adaptadores</strong>. El RPA es un adaptador rojo de borde, reemplazable sin tocar el proceso.</figcaption>
+          <figcaption>La orquestación coordina a través del <strong>bus de eventos</strong>, de modo que cada <strong>capacidad (servicio)</strong> se despliega de forma independiente; la lógica de negocio vive en las capacidades y los sistemas externos se tocan solo por <strong>adaptadores</strong>. El RPA es un adaptador de borde, reemplazable sin tocar el proceso.</figcaption>
         </figure>
         <p><strong>Separación de capas:</strong> <em>interfaz</em> (disparadores) no conoce reglas; <em>orquestación</em> conoce el flujo pero no cómo se habla con cada sistema; <em>capacidades</em> tienen la lógica de negocio y son testeables aisladas; <em>integración</em> encapsula el "cómo" técnico. Es Clean/Hexagonal aplicada a una plataforma de automatización — ver <a data-goto="adr">ADR-001</a> y <a data-goto="adr">ADR-006</a>.</p>
 
