@@ -176,6 +176,7 @@ h1{font-size:36px;line-height:1.1;letter-spacing:-1px;margin:.3em 0 .3em;color:v
 h2{font-size:22px;letter-spacing:-.5px;color:var(--ink);margin:2.1em 0 .5em;font-weight:800;text-wrap:balance;scroll-margin-top:150px}
 h3{font-size:16.5px;color:var(--ink);margin:1.6em 0 .4em;font-weight:700}
 h4{font-size:11.5px;letter-spacing:.6px;color:var(--dark);text-transform:uppercase;margin:1.4em 0 .3em;font-weight:700}
+h5{font-size:13.5px;color:var(--ink);margin:1.3em 0 .35em;font-weight:700}
 p{margin:.55em 0}
 .lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:72ch}
 ul,ol{padding-left:22px;margin:.5em 0}
@@ -792,6 +793,65 @@ sequenceDiagram
           </tbody>
         </table></div>
         <p>El <strong>modelo operativo</strong> también es un control: un equipo de plataforma dueño de estos servicios transversales, on-call, runbooks y catálogo — para que ningún proceso "resuelva la seguridad por su cuenta".</p>
+
+        <h4>Modelo operativo: quién opera la plataforma</h4>
+        <p>La regla es <em>"you build it, you run it"</em> con una salvedad: los <strong>squads de capacidad</strong> son dueños de sus componentes de negocio, pero un <strong>equipo de plataforma</strong> es dueño de los servicios transversales (orquestador, backbone de eventos, observabilidad, seguridad, catálogo, CI/CD). Así se evita que cada squad reinvente —y fragmente— lo transversal, que es una de las causas raíz de la deuda actual.</p>
+
+        <h5>RACI de las actividades clave</h5>
+        <p style="font-size:12.5px;color:var(--muted)">R = Responsable (ejecuta) · A = <em>Accountable</em> (rinde cuentas, uno solo) · C = Consultado · I = Informado.</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Actividad</th><th>Plataforma</th><th>Squad de capacidad</th><th>Arquitectura / Seguridad</th><th>Negocio (dueño de proceso)</th><th>SRE / On-call</th></tr></thead>
+          <tbody>
+            <tr><td>Discovery y catálogo (Ola 0)</td><td class="mono">A/R</td><td class="mono">C</td><td class="mono">C</td><td class="mono">C</td><td class="mono">I</td></tr>
+            <tr><td>Diseño de componente y contrato</td><td class="mono">C</td><td class="mono">A/R</td><td class="mono">C</td><td class="mono">I</td><td class="mono">I</td></tr>
+            <tr><td>Aprobación de despliegue a producción (SoD)</td><td class="mono">C</td><td class="mono">R</td><td class="mono">A</td><td class="mono">I</td><td class="mono">C</td></tr>
+            <tr><td>Operación y on-call de la plataforma</td><td class="mono">C</td><td class="mono">C</td><td class="mono">I</td><td class="mono">I</td><td class="mono">A/R</td></tr>
+            <tr><td>Operación del proceso de negocio</td><td class="mono">I</td><td class="mono">R</td><td class="mono">I</td><td class="mono">A</td><td class="mono">C</td></tr>
+            <tr><td>Gestión de incidente (SEV1/SEV2)</td><td class="mono">C</td><td class="mono">C</td><td class="mono">C</td><td class="mono">I</td><td class="mono">A/R</td></tr>
+            <tr><td>Retiro / decomiso de bot antiguo</td><td class="mono">C</td><td class="mono">R</td><td class="mono">C</td><td class="mono">A</td><td class="mono">C</td></tr>
+            <tr><td>Exposición de nueva API de sistema destino</td><td class="mono">A/R</td><td class="mono">C</td><td class="mono">C</td><td class="mono">C</td><td class="mono">I</td></tr>
+            <tr><td>Gobierno del catálogo y <em>fitness functions</em></td><td class="mono">R</td><td class="mono">C</td><td class="mono">A</td><td class="mono">I</td><td class="mono">I</td></tr>
+          </tbody>
+        </table></div>
+
+        <h5>SLOs y política de <em>error budget</em></h5>
+        <p>Cada servicio transversal tiene un SLO explícito. Cuando se agota el <em>error budget</em>, la política es <strong>congelar features y priorizar fiabilidad</strong> hasta recuperarlo — negociado con negocio, no decidido por presión.</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Servicio</th><th>SLO objetivo</th><th>Métrica clave</th><th>Al agotar el error budget</th></tr></thead>
+          <tbody>
+            <tr><td>Orquestador (saga)</td><td>99.9% disponibilidad · p95 &lt; 500 ms</td><td>Tasa de éxito de ejecuciones, latencia p95, reintentos.</td><td>Congelar features; foco en fiabilidad y capacidad.</td></tr>
+            <tr><td>Backbone de eventos (broker)</td><td>99.95% entrega · 0 pérdida</td><td><em>Lag</em> de consumidores, mensajes en DLQ, duplicados.</td><td>Revisar particiones/consumidores; parar cambios no críticos.</td></tr>
+            <tr><td>Componentes de capacidad críticos</td><td>99.9% éxito de negocio</td><td>Tasa de éxito por <code>correlationId</code>, reintentos.</td><td>Bloquear nuevos releases del componente afectado.</td></tr>
+            <tr><td>Adaptadores (API / RPA residual)</td><td>99.5% (RPA menor por fragilidad UI)</td><td>Errores por cambio de UI, timeouts, entradas a DLQ.</td><td>Priorizar exponer API / de-riesgar el RPA.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h5>Gestión de incidentes (on-call y severidades)</h5>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Severidad</th><th>Definición</th><th>MTTA objetivo</th><th>MTTR objetivo</th><th>Respuesta</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SEV1</strong></td><td>Impacto en operación/clientes o exposición regulatoria; sin <em>workaround</em>.</td><td>15 min</td><td>4 h</td><td>Guardia activa + puente de incidente + comunicación ejecutiva + <strong>postmortem obligatorio</strong>.</td></tr>
+            <tr><td><strong>SEV2</strong></td><td>Degradación con <em>workaround</em> disponible; valor en riesgo.</td><td>30 min</td><td>1 día hábil</td><td>On-call de plataforma; postmortem si es recurrente.</td></tr>
+            <tr><td><strong>SEV3</strong></td><td>Bajo impacto, sin urgencia (cosmético, deuda menor).</td><td>Siguiente día hábil</td><td>Backlog priorizado</td><td>Se agenda en el flujo normal del squad.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Escalado por tiempo: si un SEV1 no baja de severidad en el MTTR objetivo, escala a liderazgo de plataforma y, si aplica, a seguridad/riesgo. Los <strong>postmortems son sin culpa</strong> (<em>blameless</em>) y generan acciones con dueño y fecha — la métrica que importa no es "cero incidentes" sino <strong>aprendizaje y reducción de recurrencia</strong>.</p>
+
+        <h5>Soporte por niveles</h5>
+        <div class="grid grid-3">
+          <div class="card"><h4>L1 · Mesa / monitoreo</h4><p>Detecta por alertas de SLO, aplica <strong>runbooks</strong>, contiene y clasifica la severidad. Resuelve lo conocido; escala lo demás.</p></div>
+          <div class="card"><h4>L2 · Plataforma / SRE</h4><p>Diagnóstico transversal (orquestador, broker, adaptadores, infra), mitigación y coordinación del incidente.</p></div>
+          <div class="card"><h4>L3 · Squad dueño</h4><p>Dueño del componente: corrige la causa raíz en código/contrato y valida la solución. Cierra el postmortem.</p></div>
+        </div>
+
+        <h5>Evidencias auditables del modelo operativo</h5>
+        <ul>
+          <li><strong>Runbooks versionados</strong> por proceso y por servicio transversal (parte de la Definition of Done de cada ola).</li>
+          <li><strong>Registro de incidentes y postmortems</strong> con línea de tiempo, severidad, MTTA/MTTR reales y acciones con dueño.</li>
+          <li><strong>Reportes de SLO / error budget</strong> por servicio, con la decisión asociada (freeze/continuar).</li>
+          <li><strong>Bitácora de on-call y <em>handoff</em></strong> entre turnos; matriz de escalado vigente.</li>
+          <li><strong>Cadena de aprobaciones</strong> de cambios y despliegues (SoD) — ver la tabla de controles de seguridad de arriba.</li>
+        </ul>
       </article>
     </section>
 
