@@ -26,11 +26,18 @@ poc/
 │   ├── infra/           # Fakes en memoria + implementaciones Redis + logging
 │   └── app/             # FastAPI: orchestrator (webhook) y mock_api (sistema destino)
 ├── tests/               # 9 tests (motor + flujo), sin infraestructura
+├── contracts/           # OpenAPI + AsyncAPI + manifiesto de componente versionado
 ├── demo.py              # Demo sin infra: imprime la traza de 3 escenarios
 ├── docker-compose.yml   # orquestador + mock-api + redis
 ├── Dockerfile
 └── requirements.txt
 ```
+
+## Contratos (`contracts/`)
+
+- **`openapi.yaml`** — API síncrona: webhook del orquestador + componente `consulta-cliente`.
+- **`asyncapi.yaml`** — bus de eventos: canales de ejecución y **DLQ**, con `schemaVersion`, `idempotencyKey` (duplicados) y `orderingKey` (orden por `correlationId`).
+- **`component.yaml`** — manifiesto de un **componente versionado** (`consulta-cliente@2.3.1`): owner, SLA, consumidores (grafo de impacto) y changelog con marcas de ruptura (SemVer).
 
 ## Ejecutar
 

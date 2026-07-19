@@ -1,0 +1,41 @@
+# Manifiesto de componente reutilizable — entrada del catálogo.
+# Ejemplo concreto de un componente VERSIONADO con ownership, contrato,
+# consumidores (grafo de impacto), SLA y changelog con marcas de ruptura.
+apiVersion: catalog/v1
+kind: Component
+metadata:
+  name: consulta-cliente
+  version: 2.3.1                 # SemVer MAJOR.MINOR.PATCH
+  owner: squad-clientes
+  contact: "#canal-clientes"
+  status: active                 # active | deprecated | retired
+  tags: [clientes, lectura, core]
+spec:
+  description: Consulta datos básicos de un cliente por documento.
+  contract:
+    type: openapi
+    ref: ./openapi.yaml
+    operation: consultarCliente
+  consumers:                     # grafo de impacto: a quién rompo si cambio
+    - proceso-apertura-cuenta
+    - proceso-actualizacion-datos
+    - proceso-originacion-credito
+  sla:
+    availability: "99.9%"
+    p95_latency_ms: 300
+  observability:
+    correlated: true             # propaga correlationId
+    metrics: [exito, latencia, reintentos]
+  changelog:
+    - version: 2.3.1
+      change: "fix en normalización de documento con guiones"
+      breaking: false
+    - version: 2.3.0
+      change: "agrega campo 'segmento' a la respuesta"
+      breaking: false
+    - version: 2.0.0
+      change: "cambia formato de respuesta (envelope)"
+      breaking: true             # requiere migración de consumidores + coexistencia
+  deprecation:
+    replaces: null
+    sunset: null                 # fecha de retiro cuando aplique

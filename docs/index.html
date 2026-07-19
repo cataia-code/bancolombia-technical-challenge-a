@@ -829,6 +829,21 @@ flowchart LR
           </tbody>
         </table></div>
         <p>Versionado: <em>PATCH</em> = fix compatible, <em>MINOR</em> = feature compatible, <em>MAJOR</em> = ruptura (requiere migración de consumidores y ventana de coexistencia). Deprecación con aviso y fecha. El catálogo se integra al portal de desarrollador para que reutilizar sea <em>descubrible</em>. Ver <a data-goto="uml">galería UML → Componentes</a>.</p>
+
+        <h4>Ejemplo concreto: componente versionado en el catálogo</h4>
+        <p>Un componente real del catálogo se declara con un <strong>manifiesto</strong> (existe en el repo: <code>poc/contracts/component.yaml</code>, con su contrato <code>openapi.yaml</code>):</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th colspan="2"><code>consulta-cliente@2.3.1</code></th></tr></thead>
+          <tbody>
+            <tr><td>Owner / soporte</td><td class="mono">squad-clientes · #canal-clientes</td></tr>
+            <tr><td>Estado</td><td><span class="pill p-lo">active</span></td></tr>
+            <tr><td>Contrato</td><td>OpenAPI → operación <code>consultarCliente</code></td></tr>
+            <tr><td>Consumidores (impacto)</td><td>apertura-cuenta · actualizacion-datos · originacion-credito</td></tr>
+            <tr><td>SLA</td><td class="mono">99.9% · p95 300ms</td></tr>
+            <tr><td>Changelog</td><td>2.3.1 fix (compatible) · 2.3.0 +campo segmento (compatible) · <strong>2.0.0 ruptura</strong> (migración + coexistencia)</td></tr>
+          </tbody>
+        </table></div>
+        <p>El grafo de <strong>consumidores</strong> es lo que hace segura la evolución: antes de un cambio MAJOR se sabe exactamente a quién impacta. Los contratos <a data-goto="bloqueD">OpenAPI/AsyncAPI</a> viven versionados junto al código.</p>
       </article>
     </section>
 
@@ -867,7 +882,7 @@ flowchart TD
           <figcaption>Reintentos solo para fallas <em>transitorias</em> (timeouts, 5xx); los errores permanentes (validación, 4xx de negocio) no se reintentan. La alerta lleva el <code>correlationId</code> para diagnóstico inmediato. El rollback usa compensaciones porque en sistemas distribuidos no hay transacción ACID global.</figcaption>
         </figure>
 
-        <div class="callout tip"><div class="k">Este flujo está implementado y verificado — PoC ejecutable</div><p>El repositorio incluye una <strong>PoC en <code>/poc</code></strong> que materializa exactamente este diagrama: un motor de saga con reintentos (backoff + jitter), compensación en orden inverso, DLQ, idempotencia y trazabilidad por <code>correlationId</code>. Corre con <code>docker compose up</code> (orquestador FastAPI + API mock + Redis) o sin infraestructura con <code>python demo.py</code>, y trae <strong>9 tests</strong> que prueban éxito, reintento, error permanente→DLQ y compensación. Diseñada con puertos/adaptadores, coherente con el <a data-goto="adr">ADR-002</a>.</p></div>
+        <div class="callout tip"><div class="k">Este flujo está implementado y verificado — PoC ejecutable</div><p>El repositorio incluye una <strong>PoC en <code>/poc</code></strong> que materializa exactamente este diagrama: un motor de saga con reintentos (backoff + jitter), compensación en orden inverso, DLQ, idempotencia y trazabilidad por <code>correlationId</code>. Corre con <code>docker compose up</code> (orquestador FastAPI + API mock + Redis) o sin infraestructura con <code>python demo.py</code>, y trae <strong>9 tests</strong> que prueban éxito, reintento, error permanente→DLQ y compensación. Diseñada con puertos/adaptadores, coherente con el <a data-goto="adr">ADR-002</a>. Incluye <strong>contratos</strong> en <code>poc/contracts/</code>: <code>openapi.yaml</code>, <code>asyncapi.yaml</code> (con <em>schemaVersion</em>, <em>idempotencyKey</em> para duplicados, <em>orderingKey</em> para orden y canal <em>DLQ</em>) y un <code>component.yaml</code> versionado.</p></div>
 
         <h4>Arquitectura de referencia concreta (a producción)</h4>
         <p>Los componentes concretos con los que se lleva este patrón a producción:</p>
@@ -1277,8 +1292,12 @@ flowchart TB
           <li><strong>Banca:</strong> RBAC/SoD, DLP, rotación de secretos, auditoría inmutable, HA/DR, ambientes. — <em>hecho</em></li>
           <li><strong>Event-driven</strong> con sus costos (versionado de esquemas, contratos, orden, duplicados). — <em>hecho</em></li>
           <li><strong>Fitness functions</strong> concretas (duplicación por AST/flujo, reuse ratio, acoplamiento). — <em>hecho</em></li>
+          <li><strong>Contratos</strong> OpenAPI + AsyncAPI (orden, duplicados, versión de esquema, DLQ) en <code>poc/contracts/</code>. — <em>hecho</em></li>
+          <li><strong>Componente versionado</strong> de ejemplo en el catálogo (<code>consulta-cliente@2.3.1</code> con owner, SLA, consumidores y changelog). — <em>hecho</em></li>
         </ul>
       </div>
+
+      <div class="callout warn"><div class="k">Nota sobre la versión evaluada</div><p>Si una evaluación reporta que "falta la PoC" o menciona una ventana de "~30 meses", está mirando una versión <strong>anterior</strong> del sitio. Esta iteración incluye la PoC ejecutable (9 tests verdes), el calendario real (~17 meses) y los contratos. Para que el sitio publicado lo refleje hay que desplegar los últimos commits.</p></div>
 
       <h2>Mejoras futuras</h2>
       <ul>

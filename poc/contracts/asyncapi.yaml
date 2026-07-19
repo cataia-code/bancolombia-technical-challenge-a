@@ -1,0 +1,62 @@
+asyncapi: 2.6.0
+info:
+  title: Bus de eventos — Automatización
+  version: 1.0.0
+  description: >
+    Contrato del backbone event-driven. Aborda explícitamente lo que un bus real
+    exige: versionado de esquema, idempotencia (entrega at-least-once ⇒
+    duplicados), ordenamiento por clave de negocio y canal de dead-letter.
+defaultContentType: application/json
+servers:
+  local:
+    url: localhost:6379
+    protocol: redis
+    description: PoC (Redis). En producción, Kafka/RabbitMQ con particiones.
+channels:
+  ejecucion.eventos:
+    description: Eventos del ciclo de vida de una ejecución (correlacionados).
+    parameters:
+      orderingKey:
+        description: Clave de particionado/orden (garantiza orden por correlationId).
+        schema: { type: string }
+    subscribe:
+      message:
+        $ref: "#/components/messages/EventoEjecucion"
+  ejecucion.dlq:
+    description: Mensajes irrecuperables (fallo permanente o reintentos agotados).
+    subscribe:
+      message:
+        $ref: "#/components/messages/MensajeDLQ"
+components:
+  messages:
+    EventoEjecucion:
+      name: EventoEjecucion
+      headers:
+        type: object
+        required: [schemaVersion, correlationId, idempotencyKey]
+        properties:
+          schemaVersion: { type: string, example: "1.0", description: "Versionado de evento; compatibilidad hacia atrás obligatoria." }
+          correlationId: { type: string, format: uuid }
+          idempotencyKey: { type: string, description: "El consumidor descarta duplicados por esta clave." }
+      payload:
+        type: object
+        required: [event, correlationId]
+        properties:
+          event:
+            type: string
+            enum: [ENTRADA, VALIDADO, EJECUCION, REINTENTO, COMPENSACION, DLQ, SALIDA]
+          correlationId: { type: string, format: uuid }
+          proceso: { type: string, example: procesar_pago }
+          step: { type: string, example: ejecucion_pago }
+          inputHash: { type: string, description: "Hash del input; NUNCA PII en claro." }
+    MensajeDLQ:
+      name: MensajeDLQ
+      payload:
+        type: object
+        required: [correlationId, proceso, failedStep, error]
+        properties:
+          correlationId: { type: string, format: uuid }
+          proceso: { type: string }
+          failedStep: { type: string }
+          error: { type: string }
+          tipo: { type: string, enum: [PermanentError, TransientError] }
