@@ -509,7 +509,7 @@ blockquote{margin:16px 0}
       <article class="q" id="q5">
         <span class="q-tag">Pregunta 5</span>
         <h3>Arquitectura de alto nivel para el caso base</h3>
-        <p>Propongo una <strong>arquitectura modular evolutiva</strong>: capas limpias (interfaz / orquestación / capacidades / integración) con límites (bounded contexts) explícitos, gobierno y observabilidad transversales. El punto clave no es la topología de despliegue, sino la <strong>modularidad y los contratos entre módulos</strong>. Se arranca como <em>modular monolith</em> deployable y cada capacidad se extrae a microservicio <strong>solo cuando un criterio objetivo lo justifica</strong> — no por defecto.</p>
+        <p>Propongo una <strong>arquitectura modular y orientada a eventos, evolutiva</strong>: capas limpias (interfaz / orquestación / capacidades / integración) con límites (bounded contexts) explícitos, un <strong>backbone event-driven</strong> (mensajería) entre orquestación y capacidades, y gobierno/observabilidad transversales. El objetivo son <strong>capacidades como servicios desplegables de forma independiente</strong>; la clave para lograrlo sin re-fragmentar es empezar con <strong>fronteras y contratos correctos</strong> y extraer servicios de forma temprana y guiada por criterio — ni un monolito rígido, ni nano-microservicios de día cero.</p>
         <figure class="diagram" data-title="Arquitectura objetivo de alto nivel">
           <div class="fig-head"><span class="t">C4 · Arquitectura objetivo (contenedores)</span><div class="tools"><span class="tag">Mermaid</span></div></div>
           <div class="canvas"><pre class="mermaid">
@@ -564,27 +564,29 @@ flowchart TB
         </figure>
         <p><strong>Separación de capas:</strong> <em>interfaz</em> (disparadores) no conoce reglas; <em>orquestación</em> conoce el flujo pero no cómo se habla con cada sistema; <em>capacidades</em> tienen la lógica de negocio y son testeables aisladas; <em>integración</em> encapsula el "cómo" técnico. Es Clean/Hexagonal aplicada a una plataforma de automatización — ver <a data-goto="adr">ADR-001</a> y <a data-goto="adr">ADR-006</a>.</p>
 
-        <h4>¿Por qué no arrancar en microservicios? ¿No será difícil de mantener a futuro?</h4>
-        <p>Es la objeción correcta, y la respuesta distingue dos cosas que suelen confundirse: <strong>modularidad</strong> (fronteras y contratos claros) y <strong>distribución</strong> (desplegar cada módulo por separado). Lo que hace mantenible un sistema es la <strong>modularidad</strong>; la distribución es una <em>decisión operativa</em> que añade costo (red, latencia, consistencia eventual, observabilidad distribuida, DevOps) y que solo conviene pagar cuando aporta un beneficio concreto.</p>
-        <p>En este caso hay una razón de fondo: el problema que se está resolviendo es <strong>fragmentación extrema</strong> (12.000 taskbots dispersos). Saltar a "microservicios para todo" desde el día cero corre el riesgo real de cambiar 12.000 bots fragmentados por decenas de servicios distribuidos mal delimitados — un <strong>distributed monolith</strong>, que combina lo peor de ambos mundos: acoplado <em>y</em> difícil de operar. Con los límites de negocio aún sin validar (eso ocurre en la Ola 0), fijar fronteras de red prematuramente es caro de revertir.</p>
+        <h4>¿Un cambio no obliga a un release general? ¿No será difícil de mantener a futuro?</h4>
+        <p>Es la objeción correcta y tiene dos partes; una es válida y la otra mezcla dos conceptos distintos.</p>
+        <p><strong>1 · "Cambiar una capa obliga a un release general" — cierto, y por eso el diseño lo mitiga.</strong> Un único artefacto acopla la <em>cadencia de liberación</em>, y en un banco con varios squads eso es un cuello de botella real. Por eso la arquitectura incorpora desde el diseño un <strong>backbone event-driven</strong>: orquestación y capacidades se comunican por mensajería, de modo que <strong>un consumidor se despliega de forma independiente y asíncrona</strong>, sin release general. Sumado a pipelines por módulo, <em>feature flags</em>, trunk-based con CI rápido y blue/green, cambiar una pieza no arrastra a las demás.</p>
+        <p><strong>2 · "Con el tiempo es difícil de mantener" — aquí hay que desligar dos cosas.</strong> La mantenibilidad la da la <strong>modularidad</strong> (fronteras y contratos claros), no la <strong>topología de despliegue</strong> (cuántos procesos corres). Los microservicios <em>no previenen</em> la degradación: un límite mal puesto entre servicios es <strong>más</strong> caro de corregir que uno dentro de un módulo, porque el cambio ahora cruza red, contratos versionados y consistencia distribuida. En este proyecto —cuyo enemigo declarado es la <strong>fragmentación</strong> de 12.000 taskbots— reventar en decenas de servicios con fronteras aún sin validar (Ola 0) reproduce el problema en forma de <strong>distributed monolith</strong>: lo peor de ambos mundos.</p>
+        <div class="callout tip"><div class="k">El punto clave</div><p>Acertar la frontera primero (refactor barato en código modular) y distribuir después es <strong>el camino de menor riesgo hacia una arquitectura de servicios mantenible</strong>. Un mal límite en un monolito = refactor local; el mismo mal límite repartido en servicios = refactor distribuido caro.</p></div>
+        <p><strong>El objetivo no es un monolito</strong>, sino <strong>capacidades como servicios desplegables por separado</strong> sobre un backbone de eventos. La diferencia con "microservicios de día cero" es solo el <em>secuenciamiento</em>: se extrae una capacidad a servicio de forma <strong>temprana</strong> en cuanto se cumpla un criterio objetivo (no "cuando algún día duela"):</p>
+        <ul>
+          <li><strong>Ownership de otro equipo:</strong> lo mantiene un squad distinto y necesita cadencia de release propia (ley de Conway a favor).</li>
+          <li><strong>Escala independiente:</strong> perfil de carga muy distinto al resto (p. ej. "notificación" con picos) y escalarlo aparte ahorra recursos.</li>
+          <li><strong>Aislamiento de fallas o de cumplimiento:</strong> requiere un blast radius acotado o un dominio regulatorio segregado.</li>
+          <li><strong>Reutilización alta:</strong> una capacidad consumida por muchos procesos gana al desplegarse y versionarse por su cuenta.</li>
+        </ul>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Enfoque</th><th>Mantenibilidad</th><th>Costo operativo</th><th>Riesgo en este caso</th></tr></thead>
+          <thead><tr><th>Enfoque</th><th>Mantenibilidad<br/>(largo plazo)</th><th>Cadencia de release</th><th>Costo operativo</th><th>Veredicto</th></tr></thead>
           <tbody>
-            <tr><td><strong>Monolito acoplado</strong> (big ball of mud)</td><td><span class="pill p-hi">Baja</span></td><td><span class="pill p-lo">Bajo</span></td><td>Repite la deuda actual. <strong>Descartado.</strong></td></tr>
-            <tr><td><strong>Modular monolith</strong> (propuesto de inicio)</td><td><span class="pill p-lo">Alta</span> si los módulos están bien delimitados</td><td><span class="pill p-lo">Bajo</span></td><td>Bajo: fronteras revisables sin costo de red. Refactor interno barato.</td></tr>
-            <tr><td><strong>Microservicios desde día 0</strong></td><td><span class="pill p-md">Media</span></td><td><span class="pill p-hi">Alto</span></td><td>Alto: límites sin validar → distributed monolith. <strong>Prematuro.</strong></td></tr>
-            <tr><td><strong>Microservicios selectivos</strong> (destino evolutivo)</td><td><span class="pill p-lo">Alta</span></td><td><span class="pill p-md">Medio</span></td><td>Adecuado <em>cuando</em> el límite ya está probado por uso.</td></tr>
+            <tr><td><strong>Monolito acoplado</strong> (big ball of mud)</td><td><span class="pill p-hi">Baja</span></td><td><span class="pill p-hi">Rígida</span></td><td><span class="pill p-lo">Bajo</span></td><td>Repite la deuda actual. <strong>Descartado.</strong></td></tr>
+            <tr><td><strong>Modular + eventos</strong> (inicio)</td><td><span class="pill p-lo">Alta</span></td><td><span class="pill p-md">Media</span> (eventos desacoplan consumidores)</td><td><span class="pill p-lo">Bajo</span></td><td>Punto de partida: fronteras revisables, refactor barato.</td></tr>
+            <tr><td><strong>Servicios por capacidad</strong> (objetivo, extracción temprana)</td><td><span class="pill p-lo">Alta</span></td><td><span class="pill p-lo">Independiente</span></td><td><span class="pill p-md">Medio</span></td><td>Destino: se extrae cuando el criterio lo justifica.</td></tr>
+            <tr><td><strong>Microservicios de día 0</strong></td><td><span class="pill p-md">Media</span></td><td><span class="pill p-lo">Independiente</span></td><td><span class="pill p-hi">Alto</span></td><td>Límites sin validar → distributed monolith. <strong>Prematuro.</strong></td></tr>
           </tbody>
         </table></div>
-        <p>La arquitectura <strong>no se queda como monolito</strong>: es evolutiva. Un módulo se promueve a microservicio cuando cumple al menos uno de estos criterios objetivos (registrados en un ADR de extracción):</p>
-        <ul>
-          <li><strong>Escala independiente:</strong> ese componente tiene un perfil de carga muy distinto al resto (p. ej. "notificación" con picos) y escalarlo aparte ahorra recursos.</li>
-          <li><strong>Ciclo de vida / cadencia propia:</strong> cambia mucho más rápido o más lento que el core y el despliegue acoplado lo frena.</li>
-          <li><strong>Aislamiento de fallas o de cumplimiento:</strong> requiere un blast radius acotado o un dominio regulatorio segregado.</li>
-          <li><strong>Ownership de otro equipo:</strong> lo mantiene un squad distinto y la frontera de despliegue reduce fricción (ley de Conway a favor).</li>
-        </ul>
-        <p>Como los módulos ya se comunican por <strong>contratos e interfaces</strong> (puertos), extraer uno a servicio es sustituir una llamada en proceso por una remota tras el mismo contrato — un cambio localizado, no una reescritura. Ese es exactamente el diseño que evita el problema de mantenimiento a futuro: se paga la complejidad distribuida <em>solo</em> donde y cuando rinde. Es la recomendación de "monolith-first" aplicada con disciplina de fronteras.</p>
-        <div class="callout tip"><div class="k">En una frase</div><p>No es "monolito vs microservicios", es <strong>modularidad primero, distribución bajo demanda</strong>: fronteras limpias desde el día uno, despliegue independiente solo cuando un criterio medible lo justifique.</p></div>
+        <p>Como los módulos ya se comunican por <strong>contratos e interfaces</strong> (puertos) y eventos, extraer una capacidad a servicio es sustituir una llamada local por una remota tras el mismo contrato — un cambio localizado, no una reescritura. Se paga la complejidad distribuida <em>solo</em> donde y cuando rinde.</p>
+        <div class="callout tip"><div class="k">En una frase</div><p>No es "monolito vs microservicios": es <strong>fronteras y eventos primero, servicios independientes como objetivo</strong>, con extracción temprana guiada por criterio — para ganar apertura al cambio <em>sin</em> reintroducir la fragmentación que este proyecto busca eliminar.</p></div>
       </article>
 
       <article class="q" id="q6">
@@ -1128,12 +1130,12 @@ flowchart TB
       </div>
 
       <div class="card">
-        <h3>ADR-006 · Modular monolith primero, microservicios por demanda</h3>
+        <h3>ADR-006 · Fronteras y eventos primero; servicios por capacidad como objetivo</h3>
         <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
-        <p><strong>Contexto:</strong> El problema es fragmentación extrema; los límites de negocio aún no están validados (se validan en la Ola 0). Microservicios desde el día cero arriesgan un <em>distributed monolith</em>: costo operativo alto sin beneficio y fronteras caras de revertir.</p>
-        <p><strong>Decisión:</strong> Arrancar como <em>modular monolith</em> con bounded contexts y contratos explícitos entre módulos (puertos). Extraer una capacidad a microservicio solo cuando cumpla un criterio objetivo: escala independiente, cadencia de cambio propia, aislamiento de fallas/cumplimiento u ownership de otro equipo.</p>
-        <p><strong>Consecuencias:</strong> (+) Alta mantenibilidad con bajo costo operativo inicial; extracción localizada (cambiar llamada en proceso por remota tras el mismo contrato). (−) Requiere disciplina para no acoplar módulos "porque es fácil"; se controla con fitness functions y revisión de fronteras.</p>
-        <p><strong>Alternativas consideradas:</strong> Microservicios desde día 0 (rechazado: prematuro, distributed monolith); monolito acoplado (rechazado: repite la deuda actual).</p>
+        <p><strong>Contexto:</strong> El problema es fragmentación extrema; los límites de negocio aún no están validados (Ola 0). Un release general acopla la cadencia de los squads (preocupación válida). Microservicios de día cero, con fronteras sin validar, arriesgan un <em>distributed monolith</em>: caro de operar y de revertir.</p>
+        <p><strong>Decisión:</strong> Diseñar con bounded contexts, contratos (puertos) y un <strong>backbone event-driven</strong> desde el inicio, de modo que los consumidores se desplieguen independientemente. El <strong>objetivo son capacidades como servicios desplegables por separado</strong>; se extraen de forma <em>temprana</em> cuando se cumple un criterio objetivo: ownership de otro equipo, escala independiente, aislamiento de fallas/cumplimiento o reutilización alta. La cadencia se protege además con feature flags, pipelines por módulo y blue/green.</p>
+        <p><strong>Consecuencias:</strong> (+) Apertura al cambio (eventos desacoplan consumidores) con fronteras baratas de corregir al inicio; extracción localizada tras el mismo contrato. (−) Requiere disciplina para no acoplar módulos y para operar el backbone de eventos; se controla con fitness functions y revisión de fronteras.</p>
+        <p><strong>Alternativas consideradas:</strong> Microservicios desde día 0 (rechazado: prematuro, distributed monolith); monolito acoplado sin eventos (rechazado: cadencia rígida y repite la deuda actual).</p>
       </div>
     </section>
 
