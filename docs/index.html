@@ -48,20 +48,48 @@
       sequence:{useMaxWidth:true, mirrorActors:false, actorMargin:70, boxMargin:12, noteMargin:12, messageMargin:38},
       gantt:{useMaxWidth:true, fontSize:12, barHeight:20, barGap:5, topPadding:40, leftPadding:230, gridLineStartPadding:20}
     });
-    // Render UNA sola vez: evita la condición de carrera del doble mermaid.run
-    // (que re-parsea un diagrama ya convertido en SVG y produce "Syntax error").
-    var rendered = false;
-    var render = function(){
-      if(rendered) return;
-      rendered = true;
-      try{ mermaid.run({querySelector:'.mermaid'}); }
-      catch(e){ console.warn('mermaid', e); }
+    var renderQueue = Promise.resolve();
+    var seq = 0;
+    function readMermaidSource(el){
+      if(el.__mermaidSource) return el.__mermaidSource;
+      var source = '';
+      Array.prototype.forEach.call(el.childNodes, function(node){
+        if(node.nodeType === 3) source += node.nodeValue;
+        else if(node.nodeType === 1) source += node.outerHTML || node.textContent || '';
+      });
+      el.__mermaidSource = source.replace(/<br>/gi, '<br/>');
+      return el.__mermaidSource;
+    }
+    window.__renderMermaidDiagrams = function(root){
+      var scope = root || document;
+      renderQueue = renderQueue.then(async function(){
+        var diagrams = Array.prototype.slice.call(scope.querySelectorAll('pre.mermaid:not([data-mermaid-rendered="true"])'));
+        for(var i=0; i<diagrams.length; i++){
+          var el = diagrams[i];
+          if(el.dataset.mermaidRendered === 'true' || el.dataset.mermaidRendered === 'pending') continue;
+          var source = readMermaidSource(el);
+          el.dataset.mermaidRendered = 'pending';
+          try{
+            var out = await mermaid.render('mmd-'+(++seq), source);
+            el.innerHTML = out.svg;
+            if(out.bindFunctions) out.bindFunctions(el);
+            el.dataset.mermaidRendered = 'true';
+          }catch(e){
+            delete el.dataset.mermaidRendered;
+            console.warn('mermaid', e);
+          }
+        }
+      });
+      return renderQueue;
     };
+    var render = function(){
+      var active = document.querySelector('.page.active') || document;
+      window.__renderMermaidDiagrams(active);
+    };
+    render();
     if(document.fonts && document.fonts.ready){
       document.fonts.ready.then(render);
       setTimeout(render, 2500); // fallback solo si fonts.ready nunca resuelve
-    } else {
-      render();
     }
   };
 </script>
@@ -1346,6 +1374,7 @@ flowchart TB
     if(act && act.scrollIntoView) act.scrollIntoView({inline:'center', block:'nearest'});
     window.scrollTo({top:0, behavior:'auto'});
     if(history.replaceState) history.replaceState(null,'','#'+id);
+    if(window.__renderMermaidDiagrams) window.__renderMermaidDiagrams(target);
   }
 
   document.addEventListener('click', function(e){
@@ -1364,11 +1393,15 @@ flowchart TB
 
   document.getElementById('printBtn').addEventListener('click', function(){
     pages.forEach(function(p){ p.classList.add('active'); });
-    window.print();
-    setTimeout(function(){
-      var active = (location.hash||'#overview').replace('#','');
-      pages.forEach(function(p){ p.classList.toggle('active', p.id===active); });
-    }, 400);
+    var print = function(){
+      window.print();
+      setTimeout(function(){
+        var active = (location.hash||'#overview').replace('#','');
+        pages.forEach(function(p){ p.classList.toggle('active', p.id===active); });
+      }, 400);
+    };
+    if(window.__renderMermaidDiagrams) window.__renderMermaidDiagrams(document).then(print);
+    else print();
   });
 
   /* ---------- Lightbox de diagramas ---------- */
