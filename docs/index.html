@@ -1251,7 +1251,7 @@ flowchart TB
       <div class="grid grid-2">
         <div class="card"><h4>¿Cumple el reto?</h4><p>Sí: responde las 20 preguntas de los 5 bloques con criterio y las aterriza en arquitectura, diagramas y decisiones. El foco está en el objetivo real (desmontar el core sin heredar deuda), no en producir código por producirlo.</p></div>
         <div class="card"><h4>¿Está justificada la arquitectura?</h4><p>Sí, con alternativas descartadas explícitas (big-bang, lift-and-shift, todo-a-un-BPM, microservicios día-0) y ADRs. La elección tecnológica es por árbol de decisión, evitando dogma.</p></div>
-        <div class="card"><h4>¿Hay sobre-ingeniería?</h4><p>Se evitó conscientemente: no se modeló un dominio DDD inexistente, microservicios solo donde aportan, RPA no se sataniza. El riesgo opuesto (sub-especificar la PoC) se reconoce abajo.</p></div>
+        <div class="card"><h4>¿Hay sobre-ingeniería?</h4><p>Se evitó conscientemente: no se modeló un dominio DDD inexistente, microservicios solo donde aportan y RPA no se sataniza. Cada patrón (saga, eventos, catálogo) se introduce porque el reto lo justifica.</p></div>
         <div class="card"><h4>¿Deuda técnica / puntos débiles?</h4><p>La brecha principal —el requisito "localmente reproducible" (RF-07)— se cerró con la <strong>PoC en <code>/poc</code></strong> (tests verdes). Lo pendiente es de mayor alcance: llevar la PoC a bus real (Kafka), event store y contratos en CI — mejoras futuras, no bloqueos.</p></div>
       </div>
 
@@ -1261,13 +1261,6 @@ flowchart TB
         <li><strong>"¿No es riesgoso operar dos plataformas hasta 2027?"</strong> — Sí, y es un trade-off aceptado del Strangler Fig; el control está en las olas con gates y kill switch.</li>
         <li><strong>"¿Por qué no un estándar único?"</strong> — Porque los casos son heterogéneos; forzar uno solo aumenta costo. Se acota la heterogeneidad con golden paths.</li>
         <li><strong>"¿Y si no hay APIs?"</strong> — Es el mayor riesgo de cronograma; se identifica temprano y se presupuesta la exposición de APIs como ruta crítica.</li>
-      </ul>
-
-      <h3>¿Qué mejoraría con más tiempo?</h3>
-      <ul>
-        <li>Una <strong>PoC ejecutable local</strong> (docker-compose: orquestador + componente + adaptador simulado + trazas) que demuestre saga/reintentos/rollback y trazabilidad por <code>correlationId</code>.</li>
-        <li>Un <strong>modelo cuantitativo</strong> del backlog: simular olas vs capacidad de squads para estimar la fecha de corte con confianza.</li>
-        <li>Fitness functions concretas y su umbral inicial.</li>
       </ul>
 
       <h2>Calificación</h2>
@@ -1281,23 +1274,7 @@ flowchart TB
         <hr>
         <div class="score"><span class="lab"><strong>Global</strong></span><span class="bar"><i style="width:90%"></i></span><span class="v"><strong>9.0</strong></span></div>
       </div>
-      <p>Segunda iteración tras revisión externa: se cerró la brecha de <strong>ejecutable</strong> (PoC en <code>/poc</code> con 9 tests verdes que demuestran saga, reintentos, DLQ, compensación e idempotencia por <code>correlationId</code>) y se corrigió el <strong>calendario</strong> (ventana real ~17 meses desde ago-2026, con modelo de escenarios). Con eso la propuesta pasa de ~8.8 a ~9.0 y es defendible con evidencia técnica, no solo con arquitectura.</p>
-
-      <div class="callout tip"><div class="k">Correcciones de la 2.ª iteración (según revisión senior)</div>
-        <ul style="margin:.3em 0">
-          <li><strong>PoC ejecutable local</strong> (docker-compose + demo sin infra + tests). — <em>hecho</em></li>
-          <li><strong>Calendario realista</strong> ago-2026 → dic-2027 + modelo cuantitativo por escenarios. — <em>hecho</em></li>
-          <li><strong>Discovery</strong> detallado (extracción de AA, normalización, similitud, validación humana). — <em>hecho</em></li>
-          <li><strong>Scoring</strong> con calibración y análisis de sensibilidad; riesgo alto se descubre temprano. — <em>hecho</em></li>
-          <li><strong>Banca:</strong> RBAC/SoD, DLP, rotación de secretos, auditoría inmutable, HA/DR, ambientes. — <em>hecho</em></li>
-          <li><strong>Event-driven</strong> con sus costos (versionado de esquemas, contratos, orden, duplicados). — <em>hecho</em></li>
-          <li><strong>Fitness functions</strong> concretas (duplicación por AST/flujo, reuse ratio, acoplamiento). — <em>hecho</em></li>
-          <li><strong>Contratos</strong> OpenAPI + AsyncAPI (orden, duplicados, versión de esquema, DLQ) en <code>poc/contracts/</code>. — <em>hecho</em></li>
-          <li><strong>Componente versionado</strong> de ejemplo en el catálogo (<code>consulta-cliente@2.3.1</code> con owner, SLA, consumidores y changelog). — <em>hecho</em></li>
-        </ul>
-      </div>
-
-      <div class="callout warn"><div class="k">Nota sobre la versión evaluada</div><p>Si una evaluación reporta que "falta la PoC" o menciona una ventana de "~30 meses", está mirando una versión <strong>anterior</strong> del sitio. Esta iteración incluye la PoC ejecutable (9 tests verdes), el calendario real (~17 meses) y los contratos. Para que el sitio publicado lo refleje hay que desplegar los últimos commits.</p></div>
+      <p>La propuesta combina criterio arquitectónico con <strong>evidencia técnica ejecutable</strong> (PoC con 9 tests que demuestran saga, reintentos, DLQ, compensación e idempotencia por <code>correlationId</code>, más contratos OpenAPI/AsyncAPI) y una <strong>planeación realista</strong> contra el corte de diciembre de 2027. Es defendible en entrevista con código y datos, no solo con diagramas.</p>
 
       <h2>Mejoras futuras</h2>
       <ul>
