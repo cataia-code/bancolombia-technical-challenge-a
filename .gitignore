@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (por si se usa `npx serve`)
+node_modules/
+
+# Temporales
+*.log
+errores.txt

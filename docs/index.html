@@ -1,0 +1,1380 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Propuesta técnica — Evolución de una operación RPA hacia una arquitectura modular evolutiva. Prueba Técnica A · Bancolombia.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%232C2A29'/%3E%3Cpath d='M9 24 L20 12 L31 24 Z' fill='%23FDDA24'/%3E%3C/svg%3E">
+<title>Propuesta Técnica — Evolución de RPA · Bancolombia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  window.__initMermaid = function(){
+    if(!window.mermaid) return;
+    mermaid.initialize({
+      startOnLoad:false,
+      securityLevel:'loose',
+      theme:'base',
+      fontFamily:"'Open Sans','Segoe UI',Arial,sans-serif",
+      themeVariables:{
+        background:'#ffffff',
+        primaryColor:'#ffffff',
+        primaryTextColor:'#2C2A29',
+        primaryBorderColor:'#2C2A29',
+        secondaryColor:'#f4f4f4',
+        tertiaryColor:'#ffffff',
+        lineColor:'#5b6067',
+        textColor:'#2C2A29',
+        fontSize:'15px',
+        clusterBkg:'#fbfbfa',
+        clusterBorder:'#cfccc9',
+        edgeLabelBackground:'#ffffff',
+        nodeBorder:'#2C2A29',
+        actorBorder:'#2C2A29',
+        actorBkg:'#2C2A29',
+        actorTextColor:'#ffffff',
+        signalColor:'#2C2A29',
+        signalTextColor:'#2C2A29',
+        labelBoxBkgColor:'#FDDA24',
+        labelBoxBorderColor:'#a9850a',
+        labelTextColor:'#2C2A29',
+        noteBkgColor:'#FDDA24',
+        noteBorderColor:'#a9850a',
+        noteTextColor:'#2C2A29'
+      },
+      flowchart:{htmlLabels:true, useMaxWidth:true, padding:16, nodeSpacing:55, rankSpacing:62, curve:'basis'},
+      sequence:{useMaxWidth:true, mirrorActors:false, actorMargin:70, boxMargin:12, noteMargin:12, messageMargin:38},
+      gantt:{useMaxWidth:true, fontSize:13, barHeight:22, barGap:6, topPadding:44, leftPadding:190}
+    });
+    var render = function(){ try{ mermaid.run({querySelector:'.mermaid'}); }catch(e){ console.warn('mermaid', e); } };
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(render); setTimeout(render, 1500); }
+    else { render(); }
+  };
+</script>
+<style>
+:root{
+  --bg:#ffffff;
+  --surface:#f4f4f4;
+  --surface-2:#ededed;
+  --card:#ffffff;
+  --dark:#2C2A29;      /* near-black corporativo */
+  --dark-2:#1c1b1a;
+  --ink:#2C2A29;       /* titulares */
+  --body:#212529;      /* texto */
+  --muted:#6b7075;
+  --yellow:#FDDA24;
+  --yellow-deep:#a9850a;
+  --line:#e3e3e3;
+  --line-soft:#eeeeee;
+  --good:#1e8e5a;
+  --warn:#c98a00;
+  --bad:#c0392b;
+  --info:#2f6b8f;
+  --mono:'JetBrains Mono','Cascadia Code',ui-monospace,Consolas,monospace;
+  --sans:'Open Sans','Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  --radius:8px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.05);
+  --ubar-h:40px;
+  --hdr-h:78px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--body);font-family:var(--sans);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:var(--dark)}
+main a:not(.btn):not([class*="pill"]){text-decoration:underline;text-decoration-color:var(--yellow-deep);text-underline-offset:2px}
+main a:hover{text-decoration-thickness:2px}
+
+/* ---------- Utility bar (oscura) ---------- */
+.ubar{background:var(--dark);color:#fff;height:var(--ubar-h);position:relative;z-index:30}
+.ubar-in{max-width:1400px;margin:0 auto;height:100%;display:flex;align-items:stretch;padding-left:8px}
+.ubar-tabs{display:flex;align-items:stretch}
+.ubar-tabs a{display:flex;align-items:center;padding:0 18px;color:#d6d3d1;font-size:13.5px;text-decoration:none;font-weight:600}
+.ubar-tabs a.active{background:#fff;color:var(--dark)}
+.ubar-tabs a:not(.active):hover{color:#fff}
+.ubar-right{margin-left:auto;display:flex;align-items:center;gap:20px;padding-right:26px}
+.ubar-right a,.ubar-right button{color:#d6d3d1;font-size:13px;text-decoration:none;background:none;border:0;cursor:pointer;font-family:inherit}
+.ubar-right a:hover,.ubar-right button:hover{color:#fff}
+
+/* ---------- Header (blanco) ---------- */
+.hdr{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:25}
+.hdr-in{max-width:1400px;margin:0 auto;height:var(--hdr-h);display:flex;align-items:center;gap:26px;padding:0 26px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex:0 0 auto}
+.brand-logo{height:30px;width:auto;display:block}
+.brand .word{font-size:23px;font-weight:800;color:var(--dark);letter-spacing:-.6px}
+.mainnav{display:flex;gap:26px;align-items:center;margin:0 auto}
+.mainnav a{color:var(--dark);font-size:15px;font-weight:600;text-decoration:none;padding:6px 2px;cursor:pointer}
+.mainnav a:hover{color:#000}
+.hdr-actions{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.pill-dark{background:var(--dark);color:#fff;border:0;border-radius:100px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.pill-dark:hover{background:#000}
+.login-box{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 6px 16px}
+.login-box .lb-label{font-size:13.5px;color:var(--dark);font-weight:600;white-space:nowrap}
+.btn-yellow{background:var(--yellow);color:var(--dark);border:0;border-radius:60px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-yellow:hover{filter:brightness(.96)}
+.menu-btn{display:none;background:none;border:0;font-size:22px;cursor:pointer;color:var(--dark)}
+
+/* ---------- Subnav (tabs de secciones) ---------- */
+.subnav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:var(--hdr-h);z-index:24}
+.subnav-in{max-width:1400px;margin:0 auto;display:flex;gap:2px;padding:0 20px;overflow-x:auto;scrollbar-width:thin}
+.subnav a{white-space:nowrap;padding:14px 16px;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;border-bottom:3px solid transparent;cursor:pointer;display:flex;gap:8px;align-items:center}
+.subnav a .ix{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+.subnav a:hover{color:var(--dark)}
+.subnav a.active{color:var(--dark);border-bottom-color:var(--yellow)}
+.subnav a.active .ix{color:var(--yellow-deep)}
+
+/* ---------- Content ---------- */
+main{min-width:0}
+.wrap{max-width:1080px;margin:0 auto;padding:36px 26px 120px}
+.page{display:none;animation:fade .3s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.eyebrow{font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--yellow-deep);font-weight:700}
+h1{font-size:46px;line-height:1.08;letter-spacing:-1.2px;margin:.3em 0 .3em;color:var(--ink);font-weight:800;text-wrap:balance}
+h2{font-size:27px;letter-spacing:-.6px;color:var(--ink);margin:2.2em 0 .5em;font-weight:800;text-wrap:balance;scroll-margin-top:150px}
+h3{font-size:19px;color:var(--ink);margin:1.7em 0 .4em;font-weight:700}
+h4{font-size:12.5px;letter-spacing:.6px;color:var(--dark);text-transform:uppercase;margin:1.4em 0 .3em;font-weight:700}
+p{margin:.55em 0}
+.lede{font-size:19px;line-height:1.55;color:var(--muted);max-width:70ch}
+ul,ol{padding-left:22px;margin:.5em 0}
+li{margin:.28em 0}
+strong{color:var(--ink);font-weight:700}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+code{font-family:var(--mono);font-size:.84em;background:var(--surface);padding:1.5px 6px;border-radius:5px;color:var(--dark)}
+
+/* Hero */
+.hero{background:var(--surface);border-radius:16px;padding:44px 40px;margin:26px 0 10px}
+.hero h1{margin-top:.15em}
+@media(max-width:640px){.hero{padding:28px 22px}}
+
+/* Question block */
+.q{scroll-margin-top:150px;border-top:1px solid var(--line);padding-top:10px;margin-top:36px}
+.q-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#fff;background:var(--dark);padding:5px 12px;border-radius:60px;letter-spacing:.3px;font-weight:700;text-transform:uppercase}
+.q h3{margin-top:.5em;font-size:20px}
+
+/* Cards & callouts */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin:18px 0}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:820px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.callout{border-left:5px solid var(--dark);background:var(--surface);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0}
+.callout.tip{border-color:var(--good)}
+.callout.warn{border-color:var(--warn)}
+.callout.risk{border-color:var(--bad)}
+.callout .k{font-size:11px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;color:var(--muted)}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
+@media(max-width:820px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-top:4px solid var(--yellow)}
+.kpi .n{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px;font-weight:600}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:18px 0;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{background:var(--dark);color:#fff;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;position:sticky;top:0;font-weight:700}
+tbody tr:hover{background:var(--surface)}
+td .mono,th .mono{font-family:var(--mono)}
+.pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:60px;font-weight:700;white-space:nowrap}
+.p-hi{background:rgba(192,57,43,.12);color:var(--bad)}
+.p-md{background:rgba(201,138,0,.16);color:var(--warn)}
+.p-lo{background:rgba(30,142,90,.14);color:var(--good)}
+.p-info{background:rgba(47,107,143,.14);color:var(--info)}
+
+/* Diagram figure */
+figure.diagram{margin:22px 0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+figure.diagram .fig-head{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--dark);border-bottom:1px solid var(--line)}
+figure.diagram .fig-head .t{font-size:13px;color:#fff;font-weight:700;letter-spacing:.2px}
+figure.diagram .fig-head .tools{margin-left:auto;display:flex;gap:6px}
+figure.diagram .fig-head .tag{font-size:10px;color:#d6d3d1;border:1px solid #4a4846;padding:2px 8px;border-radius:60px}
+.mini{font-size:11px;padding:5px 10px;border:1px solid #4a4846;background:transparent;border-radius:60px;cursor:pointer;color:#f5f4f2;font-family:inherit;font-weight:600}
+.mini:hover{background:var(--yellow);color:var(--dark);border-color:var(--yellow)}
+figure.diagram .canvas{padding:18px;overflow-x:auto;background:
+  radial-gradient(circle at 1px 1px, var(--line-soft) 1px, transparent 0);
+  background-size:22px 22px}
+figure.diagram figcaption{font-size:12.5px;color:var(--muted);padding:0 18px 14px}
+.mermaid{display:flex;justify-content:center}
+.mermaid svg{max-width:100%;height:auto}
+
+/* Lightbox */
+.lightbox{position:fixed;inset:0;z-index:100;background:rgba(28,27,26,.9);display:none;flex-direction:column}
+.lightbox.open{display:flex}
+.lb-bar{display:flex;align-items:center;gap:10px;padding:12px 18px;color:#fff;font-size:13px}
+.lb-bar .lb-t{font-weight:700}
+.lb-bar .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.lb-bar button{font-size:12.5px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);padding:7px 12px;border-radius:60px;cursor:pointer;font-family:inherit;font-weight:600}
+.lb-bar button:hover{background:var(--yellow);color:var(--dark);border-color:var(--yellow)}
+.lb-stage{flex:1;overflow:hidden;position:relative;cursor:grab;display:flex;align-items:center;justify-content:center}
+.lb-stage.grabbing{cursor:grabbing}
+.lb-stage .lb-inner{transform-origin:0 0;transition:transform .04s linear}
+.lb-stage .lb-inner svg{max-width:none;background:#fff;border-radius:8px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.lb-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:11px;background:rgba(0,0,0,.35);padding:5px 12px;border-radius:60px;pointer-events:none}
+
+/* Score */
+.score{display:flex;align-items:center;gap:14px;margin:8px 0}
+.score .bar{flex:1;height:9px;background:var(--surface-2);border-radius:60px;overflow:hidden}
+.score .bar i{display:block;height:100%;background:var(--dark);border-radius:60px}
+.score .bar i.y{background:var(--yellow)}
+.score .v{font-size:12px;color:var(--ink);min-width:52px;text-align:right;font-weight:700}
+.score .lab{font-size:13px;min-width:180px}
+
+/* Footer */
+.foot{border-top:1px solid var(--line);margin-top:60px;padding-top:22px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+
+blockquote{margin:16px 0}
+
+/* Mobile */
+@media(max-width:960px){
+  .mainnav{display:none}
+  .login-box .lb-label{display:none}
+  .menu-btn{display:inline-flex}
+  .ubar-right{gap:12px;padding-right:14px}
+}
+@media(max-width:640px){
+  h1{font-size:33px}
+  .pill-dark{display:none}
+  .hero{margin:18px 0}
+}
+:focus-visible{outline:2px solid var(--yellow-deep);outline-offset:2px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- Footer global ---------- */
+.site-foot{background:var(--dark);color:#e8e6e4;margin-top:40px}
+.site-foot-in{max-width:1080px;margin:0 auto;padding:26px 26px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.sf-brand{display:flex;align-items:center;gap:12px}
+.sf-logo{height:26px;width:auto;display:block;filter:brightness(0) invert(1)}
+.sf-brandtxt{display:flex;flex-direction:column;line-height:1.3}
+.sf-brandtxt b{color:#fff;font-size:14.5px;font-weight:700}
+.sf-brandtxt span{color:#a8a5a2;font-size:12px}
+.sf-author{display:flex;flex-direction:column;align-items:flex-end;line-height:1.35;text-align:right}
+.sf-by{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#a8a5a2;font-weight:600}
+.sf-name{color:#fff;font-size:15.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center}
+.sf-name:hover{color:var(--yellow)}
+.sf-date{font-size:12px;color:#a8a5a2;margin-top:2px}
+@media(max-width:560px){.site-foot-in{flex-direction:column;align-items:flex-start}.sf-author{align-items:flex-start;text-align:left}}
+</style>
+</head>
+<body>
+
+<!-- ============ UTILITY BAR ============ -->
+<div class="ubar">
+  <div class="ubar-in">
+    <nav class="ubar-tabs" aria-label="Perfil">
+      <a class="active">Propuesta</a>
+      <a data-goto="requisitos">Reto Parte A</a>
+      <a data-goto="uml">Diagramas</a>
+    </nav>
+    <div class="ubar-right">
+      <span style="color:#a8a5a2;font-size:12.5px">Confidencial · Uso en entrevista</span>
+      <button id="printBtn">⎙ PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="brand" data-goto="overview" aria-label="Bancolombia — inicio de la propuesta">
+      <img class="brand-logo" src="assets/logo-bancolombia.svg" alt="Bancolombia" width="99" height="28">
+    </a>
+    <nav class="mainnav" aria-label="Secciones principales">
+      <a data-goto="overview">Inicio</a>
+      <a data-goto="bloqueA">Estrategia</a>
+      <a data-goto="bloqueB">Arquitectura</a>
+      <a data-goto="uml">Diagramas</a>
+      <a data-goto="adr">Decisiones</a>
+    </nav>
+    <div class="hdr-actions">
+      <button class="pill-dark" data-goto="review">Revisión crítica</button>
+      <div class="login-box">
+        <span class="lb-label">Reto Senior · Parte A</span>
+        <button class="btn-yellow" data-goto="requisitos">Empezar</button>
+      </div>
+      <button class="menu-btn" id="menuBtn" aria-label="Menú">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SUBNAV ============ -->
+<div class="subnav">
+  <div class="subnav-in" id="subnav">
+    <a data-goto="overview"><span class="ix">00</span> Resumen</a>
+    <a data-goto="requisitos"><span class="ix">01</span> Requisitos</a>
+    <a data-goto="bloqueA"><span class="ix">A</span> Estrategia</a>
+    <a data-goto="bloqueB"><span class="ix">B</span> Arquitectura</a>
+    <a data-goto="bloqueC"><span class="ix">C</span> Consolidación</a>
+    <a data-goto="bloqueD"><span class="ix">D</span> Implementación</a>
+    <a data-goto="bloqueE"><span class="ix">E</span> Equipo &amp; criterio</a>
+    <a data-goto="uml"><span class="ix">UML</span> Diagramas</a>
+    <a data-goto="adr"><span class="ix">ADR</span> Decisiones</a>
+    <a data-goto="review"><span class="ix">QA</span> Revisión</a>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+
+    <!-- ==================== OVERVIEW ==================== -->
+    <section class="page active" id="overview" data-title="Resumen">
+      <div class="hero">
+        <div class="eyebrow">Prueba técnica · Senior Software Engineer · Parte A</div>
+        <h1>Evolución de una operación RPA de 12.000 taskbots hacia una arquitectura evolutiva y reutilizable</h1>
+        <p class="lede">Propuesta para <strong>XYZ Ltda.</strong>: retirar Automation Anywhere como plataforma <em>core</em> antes de diciembre de 2027, reduciendo deuda técnica y fragmentación mediante orquestación, componentes reutilizables y RPA selectivo — con trazabilidad, gobierno y una prueba de concepto <em>localmente reproducible</em>.</p>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi"><div class="n">500</div><div class="l">RPAs en producción</div></div>
+        <div class="kpi"><div class="n">12.000</div><div class="l">Taskbots identificados</div></div>
+        <div class="kpi"><div class="n">Dic 2027</div><div class="l">Cierre del desmonte</div></div>
+        <div class="kpi"><div class="n">~30 meses</div><div class="l">Ventana de ejecución</div></div>
+      </div>
+
+      <h2 id="ov-resumen">Resumen ejecutivo</h2>
+      <p>El problema real no es "reescribir 12.000 bots"; es <strong>desmontar una dependencia de plataforma sin detener la operación</strong> y, al mismo tiempo, <strong>no reproducir la fragmentación</strong> que hoy produce alta redundancia de tareas y utilidades. La automatización por interfaz gráfica (UI) es la principal fuente de fragilidad: acopla la lógica de negocio al pixel de una pantalla.</p>
+      <p>La estrategia propuesta se apoya en tres decisiones nucleares:</p>
+      <div class="grid grid-3">
+        <div class="card"><h4>1 · Racionalizar antes de migrar</h4><p>De 12.000 taskbots a un catálogo real de <em>capacidades</em>. La mayoría son variantes/duplicados: se consolidan o se retiran, no se migran.</p></div>
+        <div class="card"><h4>2 · Orquestar, no bot-izar</h4><p>Un plano de orquestación (BPM/n8n) coordina <em>servicios y componentes reutilizables</em>; el RPA queda como adaptador de último recurso frente a sistemas sin API.</p></div>
+        <div class="card"><h4>3 · Gobierno desde el diseño</h4><p>Catálogo versionado, trazabilidad end-to-end por <code>correlationId</code>, seguridad y observabilidad como <em>plataforma</em>, no como añadido por bot.</p></div>
+      </div>
+
+      <div class="callout">
+        <div class="k">Qué se considera una solución correcta</div>
+        <p>Una propuesta que (a) permite apagar Automation Anywhere de forma verificable y por olas, (b) demuestra reducción de redundancia mediante reutilización, (c) hace la operación observable y auditable, y (d) es defendible con criterios explícitos de <em>cuándo</em> usar cada tecnología — sin sobre-ingeniería ni microservicios injustificados.</p>
+      </div>
+
+      <h2 id="ov-inout">Entradas y salidas del sistema objetivo</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <h4>Entradas</h4>
+          <ul>
+            <li>Eventos y disparadores (schedule, webhook, archivo, cola, correo).</li>
+            <li>Datos de negocio + reglas de validación.</li>
+            <li>Inventario actual de bots (metadata Automation Anywhere) para el <em>discovery</em>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Salidas</h4>
+          <ul>
+            <li>Efectos en sistemas destino (core, ERP, portales) vía API o RPA selectivo.</li>
+            <li>Traza de ejecución auditable (entrada → validación → ejecución → salida).</li>
+            <li>Métricas de valor: tiempo ahorrado, tasa de éxito, casos consolidados.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <div class="k">Decisión de alcance</div>
+        <p>Este reto es de estrategia de migración y arquitectura de plataforma, no de un dominio transaccional. Por eso <strong>no se modela un dominio DDD de "entidades y value objects"</strong>: forzar un diagrama de clases de dominio sería sobre-ingeniería y no aportaría a la decisión. Los diagramas que sí aportan a la evaluación (contexto, componentes, secuencia de trazabilidad, actividad de errores, olas) están en la <a data-goto="uml">galería UML</a>.</p>
+      </div>
+    </section>
+
+    <!-- ==================== REQUISITOS ==================== -->
+    <section class="page" id="requisitos" data-title="Requisitos">
+      <div class="eyebrow">Entendimiento del reto</div>
+      <h1>Requisitos, restricciones y supuestos</h1>
+      <p class="lede">Separar lo explícito de lo inferido es parte de la evaluación: evita resolver un problema distinto al planteado.</p>
+
+      <h2>Requisitos funcionales</h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>ID</th><th>Requisito</th><th>Descripción</th><th>Prioridad</th><th>Criterio de aceptación</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">RF-01</td><td>Inventario y clasificación</td><td>Descubrir, clasificar y desduplicar los 12.000 taskbots.</td><td><span class="pill p-hi">Alta</span></td><td>Catálogo con dueño, criticidad, dependencias y decisión (migrar/consolidar/retirar).</td></tr>
+          <tr><td class="mono">RF-02</td><td>Migración por olas</td><td>Ejecutar la salida de Automation Anywhere en releases controlados.</td><td><span class="pill p-hi">Alta</span></td><td>Cada ola cierra bots antiguos con evidencia de paridad funcional.</td></tr>
+          <tr><td class="mono">RF-03</td><td>Orquestación de procesos</td><td>Coordinar pasos entrada→validación→ejecución→salida.</td><td><span class="pill p-hi">Alta</span></td><td>Un proceso se ejecuta, reintenta y compensa de forma determinista.</td></tr>
+          <tr><td class="mono">RF-04</td><td>Componentes reutilizables</td><td>Capacidades comunes (p. ej. "consultar cliente", "notificar") como servicios.</td><td><span class="pill p-hi">Alta</span></td><td>≥1 componente consumido por N procesos sin copiar lógica.</td></tr>
+          <tr><td class="mono">RF-05</td><td>Trazabilidad end-to-end</td><td>Correlacionar cada ejecución de punta a punta.</td><td><span class="pill p-hi">Alta</span></td><td>Dado un <code>correlationId</code> se reconstruye toda la ejecución.</td></tr>
+          <tr><td class="mono">RF-06</td><td>RPA selectivo</td><td>Mantener RPA solo donde no hay API/integración viable.</td><td><span class="pill p-md">Media</span></td><td>Cada RPA vigente tiene justificación documentada y fecha de revisión.</td></tr>
+          <tr><td class="mono">RF-07</td><td>PoC local</td><td>Demostrar el patrón de forma reproducible en local.</td><td><span class="pill p-md">Media</span></td><td>Un caso corre localmente (compose) con trazas y reintentos.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>Requisitos no funcionales</h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Atributo</th><th>Objetivo en esta solución</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Mantenibilidad</strong></td><td>Lógica de negocio desacoplada de la UI y de la plataforma de ejecución; cambios localizados en componentes.</td></tr>
+          <tr><td><strong>Escalabilidad</strong></td><td>Orquestador y workers escalan horizontal; picos absorbidos con colas.</td></tr>
+          <tr><td><strong>Testabilidad</strong></td><td>Componentes con contrato → tests unitarios/contrato/e2e; menos dependencia de "grabar pantalla".</td></tr>
+          <tr><td><strong>Seguridad</strong></td><td>Secretos en vault, mínimo privilegio, sin PII en logs, autenticación servicio-a-servicio.</td></tr>
+          <tr><td><strong>Observabilidad</strong></td><td>Logs estructurados + métricas + trazas distribuidas con <code>correlationId</code>.</td></tr>
+          <tr><td><strong>Gobierno</strong></td><td>Catálogo versionado, ownership claro, políticas de reutilización y aprobación.</td></tr>
+          <tr><td><strong>Bajo acoplamiento / alta cohesión</strong></td><td>Adaptadores aíslan sistemas externos; cada componente hace una cosa.</td></tr>
+          <tr><td><strong>Portabilidad</strong></td><td>PoC reproducible en local; independencia del proveedor RPA.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>Supuestos</h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Supuesto</th><th>Justificación</th><th>Riesgo si es falso</th></tr></thead>
+        <tbody>
+          <tr><td>La mayoría de los 12.000 taskbots son variantes/duplicados de un conjunto menor de procesos.</td><td>"Alta redundancia de tareas, utilidades y variantes" es un hecho del enunciado.</td><td>El esfuerzo de racionalización crece; se necesita más capacidad de análisis.</td></tr>
+          <tr><td>Buena parte de los sistemas destino exponen (o pueden exponer) API/servicios.</td><td>Es la condición para reemplazar UI por integración.</td><td>Aumenta el % de RPA selectivo residual y el costo de la ventana 2027.</td></tr>
+          <tr><td>Existe apetito organizacional por gobierno y catálogo central.</td><td>El objetivo declarado es "menor deuda técnica y mayor reutilización".</td><td>Se repite la fragmentación; la migración no captura valor.</td></tr>
+          <tr><td>Se dispone de un inventario/metadata exportable desde Automation Anywhere.</td><td>Control Room mantiene metadata de bots y ejecuciones.</td><td>El discovery se vuelve manual y más lento.</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:12.5px;color:var(--muted)">Cada supuesto se valida en la Ola 0 (discovery). No se bloquea la propuesta: se avanza con la hipótesis y se corrige con datos.</p>
+
+      <h2>Preguntas abiertas al evaluador</h2>
+      <ol>
+        <li>¿Cuál es el <strong>presupuesto y capacidad de squads</strong> disponibles hasta 2027? Determina el número de olas paralelas.</li>
+        <li>¿Existe ya un <strong>estándar corporativo</strong> de BPM / iPaaS / cloud, o el candidato lo propone libremente?</li>
+        <li>¿Qué procesos son <strong>críticos regulatorios</strong> (SOX, SFC, protección de datos) y por tanto no pueden migrar sin doble corrida?</li>
+        <li>¿La licencia de Automation Anywhere tiene una <strong>fecha/costo de corte</strong> que fije la ruta crítica?</li>
+        <li>¿Hay tolerancia a mantener un <strong>RPA selectivo</strong> de proveedor alterno (p. ej. open source) o el objetivo es cero RPA?</li>
+      </ol>
+    </section>
+
+    <!-- ==================== BLOQUE A ==================== -->
+    <section class="page" id="bloqueA" data-title="Bloque A · Estrategia">
+      <div class="eyebrow">Bloque A</div>
+      <h1>Estrategia de migración</h1>
+      <p class="lede">Cómo pasar del estado actual a la arquitectura objetivo antes de diciembre de 2027 sin detener la operación ni heredar la deuda.</p>
+
+      <article class="q" id="q1">
+        <span class="q-tag">Pregunta 1</span>
+        <h3>Estrategia general de migración hacia la arquitectura objetivo</h3>
+        <p>Adopto una estrategia <strong>evolutiva por capacidades (capability-based), no bot-por-bot</strong>, con el patrón <em>Strangler Fig</em>: la plataforma nueva va "estrangulando" a Automation Anywhere proceso a proceso, y se apaga cuando ya no queda tráfico. Cinco frentes en paralelo:</p>
+        <ol>
+          <li><strong>Discovery &amp; racionalización (Ola 0).</strong> Exportar metadata del Control Room, construir un grafo de bots→procesos→sistemas, detectar duplicados y clusters de lógica similar. La primera reducción viene de <em>retirar y consolidar</em>, no de migrar.</li>
+          <li><strong>Clasificación por decisión (las 6 R adaptadas):</strong> <em>Retire</em> (obsoleto), <em>Retain</em> (RPA selectivo justificado), <em>Re-platform</em> (a n8n/BPM), <em>Re-architect</em> (a microservicio/API), <em>Consolidate</em> (a componente reutilizable), <em>Replace</em> (capacidad ya existente en un sistema).</li>
+          <li><strong>Construcción de plataforma primero (Ola 1).</strong> Antes de migrar en volumen: orquestador, catálogo de componentes, plano de observabilidad/seguridad y CI/CD. Es lo que evita reproducir la fragmentación.</li>
+          <li><strong>Migración por olas</strong> con criterio de valor/riesgo (P2/P3) y <em>coexistencia</em>: el proceso nuevo corre en paralelo hasta demostrar paridad.</li>
+          <li><strong>Desmonte controlado.</strong> Cada ola termina apagando bots antiguos con evidencia; la licencia se reduce escalonadamente hasta el corte de 2027.</li>
+        </ol>
+        <div class="callout tip"><div class="k">Principio rector</div><p>"Migrar" un duplicado es pagar dos veces por deuda técnica. El primer entregable de valor es <strong>un catálogo que dice qué NO migrar.</strong></p></div>
+        <p>Diagrama de olas y estado objetivo: ver <a data-goto="uml">galería UML → Roadmap de olas</a> y <a data-goto="bloqueB">Bloque B → arquitectura</a>.</p>
+      </article>
+
+      <article class="q" id="q2">
+        <span class="q-tag">Pregunta 2</span>
+        <h3>Criterio de priorización</h3>
+        <p>Priorizo con un <strong>score compuesto y explícito</strong>, no por intuición. Cinco factores, cada uno 1–5, con pesos calibrables por el comité de arquitectura:</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Factor</th><th>Peso</th><th>Qué mide</th><th>Dirección</th></tr></thead>
+          <tbody>
+            <tr><td>Valor de negocio</td><td class="mono">30%</td><td>Volumen × criticidad × ahorro potencial.</td><td>Mayor = antes</td></tr>
+            <tr><td>Facilidad de consolidación</td><td class="mono">25%</td><td>Cuántos bots colapsan en un componente reutilizable.</td><td>Mayor = antes</td></tr>
+            <tr><td>Complejidad técnica</td><td class="mono">20%</td><td>Dependencia de UI, nº de sistemas, reglas.</td><td>Menor = antes</td></tr>
+            <tr><td>Riesgo</td><td class="mono">15%</td><td>Impacto de falla + exposición regulatoria.</td><td>Alto riesgo → coexistencia obligatoria</td></tr>
+            <tr><td>Dependencia técnica</td><td class="mono">10%</td><td>Bloqueos por APIs faltantes / terceros.</td><td>Menor = antes</td></tr>
+          </tbody>
+        </table></div>
+        <p><code>Score = 0.30·Valor + 0.25·Consolidación + 0.20·(6−Complejidad) + 0.15·(6−Riesgo) + 0.10·(6−Dependencia)</code></p>
+        <p>Se ejecuta primero el cuadrante <strong>alto valor / baja complejidad</strong> (quick wins que financian el programa y prueban la plataforma). El <strong>alto valor / alta complejidad</strong> va después, ya con plataforma madura. El <strong>bajo valor / alta complejidad</strong> es candidato a <em>Retire</em> o RPA selectivo. Un matiz importante: la <strong>consolidación pesa casi tanto como el valor</strong>, porque migrar el bot que colapsa 40 duplicados rinde más que migrar el bot "estrella" aislado.</p>
+      </article>
+
+      <article class="q" id="q3">
+        <span class="q-tag">Pregunta 3</span>
+        <h3>División por olas / releases con hitos de control</h3>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Ola</th><th>Foco</th><th>Duración</th><th>Hito de control (gate)</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Ola 0</td><td>Discovery, catálogo, criterios de decisión, quick-kill de obsoletos.</td><td>~2 meses</td><td>Catálogo aprobado + backlog priorizado + baseline de métricas.</td></tr>
+            <tr><td class="mono">Ola 1</td><td>Plataforma base: orquestador, observabilidad, seguridad, CI/CD, 1–2 pilotos.</td><td>~3 meses</td><td>Pilotos en producción con paridad + <em>golden path</em> documentado.</td></tr>
+            <tr><td class="mono">Ola 2</td><td>Quick wins de alto valor / baja complejidad + primeros componentes reutilizables.</td><td>~4 meses</td><td>≥3 componentes consumidos por N procesos; primer lote de bots apagados.</td></tr>
+            <tr><td class="mono">Ola 3–N</td><td>Migración en volumen por dominio de negocio; consolidación masiva.</td><td>iterativa</td><td>Cada release: paridad demostrada + bots antiguos retirados + licencia reducida.</td></tr>
+            <tr><td class="mono">Ola final</td><td>Casos complejos/regulatorios + RPA selectivo residual + corte de plataforma.</td><td>hasta Q4-2027</td><td>Automation Anywhere apagado como <em>core</em>; go/no-go de descomisionamiento.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Cada ola es un <em>release</em> con Definition of Done que incluye: pruebas de paridad, runbook, dashboards y "kill switch" del bot antiguo. Roadmap visual en la <a data-goto="uml">galería UML</a>.</p>
+      </article>
+
+      <article class="q" id="q4">
+        <span class="q-tag">Pregunta 4</span>
+        <h3>Qué queda como RPA selectivo — y cuándo se justifica</h3>
+        <p>El RPA no es el enemigo; el <strong>RPA como plataforma core</strong> lo es. Mantengo RPA <em>selectivo</em>, tratado como un <strong>adaptador más</strong> detrás de una interfaz, solo cuando se cumplen todas estas condiciones:</p>
+        <ul>
+          <li>El sistema destino <strong>no tiene API</strong> ni forma soportada de integración (legacy, mainframe verde, portal de tercero).</li>
+          <li>Construir/exponer la integración cuesta más que el valor del caso, o el sistema está en fin de vida.</li>
+          <li>El volumen y criticidad son bajos-medios y la UI es <strong>estable</strong> (no cambia cada release).</li>
+        </ul>
+        <p>Condiciones para <strong>no</strong> dejar RPA: si existe API, si el proceso es crítico/alto volumen, o si la UI es volátil (fuente de fallas). En esos casos la inversión en integración se paga sola. Todo RPA que sobreviva lleva <strong>fecha de revisión</strong> y dueño: es deuda técnica consciente y acotada, no un pase libre.</p>
+        <div class="callout warn"><div class="k">Trade-off aceptado</div><p>Mantener un runtime RPA reducido (idealmente open source, no el proveedor core) implica seguir operando dos tecnologías. Se acepta a cambio de no bloquear la migración por el 5–10% de casos sin API — pero con presupuesto y roadmap de retiro explícito.</p></div>
+      </article>
+    </section>
+
+    <!-- ==================== BLOQUE B ==================== -->
+    <section class="page" id="bloqueB" data-title="Bloque B · Arquitectura">
+      <div class="eyebrow">Bloque B</div>
+      <h1>Arquitectura y decisión tecnológica</h1>
+      <p class="lede">Una arquitectura evolutiva: orquestación al centro, componentes reutilizables como activos, RPA como adaptador de borde y gobierno transversal.</p>
+
+      <article class="q" id="q5">
+        <span class="q-tag">Pregunta 5</span>
+        <h3>Arquitectura de alto nivel para el caso base</h3>
+        <p>Propongo una <strong>arquitectura modular evolutiva</strong>: capas limpias (interfaz / orquestación / capacidades / integración) con límites (bounded contexts) explícitos, gobierno y observabilidad transversales. El punto clave no es la topología de despliegue, sino la <strong>modularidad y los contratos entre módulos</strong>. Se arranca como <em>modular monolith</em> deployable y cada capacidad se extrae a microservicio <strong>solo cuando un criterio objetivo lo justifica</strong> — no por defecto.</p>
+        <figure class="diagram" data-title="Arquitectura objetivo de alto nivel">
+          <div class="fig-head"><span class="t">C4 · Arquitectura objetivo (contenedores)</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+          <div class="canvas"><pre class="mermaid">
+flowchart TB
+  subgraph CH["Canales / Disparadores"]
+    T1["Schedule"]:::src
+    T2["Webhook / Evento"]:::src
+    T3["Archivo / Cola / Correo"]:::src
+  end
+  subgraph ORq["Plano de Orquestacion"]
+    ORQ["Orquestador de procesos<br/>(BPM / n8n)"]:::core
+    Q[["Cola de trabajo<br/>(mensajeria)"]]:::infra
+  end
+  subgraph CAP["Capa de Capacidades reutilizables"]
+    C1["Componente:<br/>Validacion"]:::cap
+    C2["Componente:<br/>Consulta cliente"]:::cap
+    C3["Componente:<br/>Notificacion"]:::cap
+    MS["Microservicio de<br/>dominio (selectivo)"]:::cap
+  end
+  subgraph INT["Capa de Integracion (Adaptadores)"]
+    A1["API / iPaaS"]:::adp
+    A2["Conector Power Platform"]:::adp
+    A3["RPA selectivo<br/>(sin API)"]:::rpa
+  end
+  subgraph SYS["Sistemas destino"]
+    S1[("Core / ERP")]:::sys
+    S2[("Portales / Legacy")]:::sys
+  end
+  subgraph GOV["Gobierno y Observabilidad (transversal)"]
+    O1["Trazas + Logs + Metricas"]:::gov
+    O2["Secret Vault / IAM"]:::gov
+    O3["Catalogo de componentes"]:::gov
+  end
+  T1 & T2 & T3 --> ORQ
+  ORQ --> Q --> C1 & C2 & C3 & MS
+  C1 & C2 & C3 & MS --> A1 & A2 & A3
+  A1 & A2 --> S1
+  A3 --> S2
+  ORQ -.traza.-> O1
+  CAP -.secretos.-> O2
+  CAP -.publica.-> O3
+  classDef src fill:#f4f4f4,stroke:#2C2A29,color:#2C2A29;
+  classDef core fill:#2C2A29,stroke:#2C2A29,color:#fff;
+  classDef infra fill:#FDDA24,stroke:#a9850a,color:#3a2f00;
+  classDef cap fill:#ffffff,stroke:#2C2A29,color:#2C2A29;
+  classDef adp fill:#eef1f3,stroke:#6b7075,color:#33414f;
+  classDef rpa fill:#fbeaea,stroke:#c0392b,color:#7d241b;
+  classDef sys fill:#f4f4f4,stroke:#6b7075,color:#33414f;
+  classDef gov fill:#eafaf1,stroke:#1e8e5a,color:#155e3b;
+          </pre></div>
+          <figcaption>La lógica de negocio vive en <strong>componentes de capacidad</strong>; la orquestación solo coordina; los sistemas externos se tocan únicamente por <strong>adaptadores</strong>. El RPA es un adaptador rojo de borde, reemplazable sin tocar el proceso.</figcaption>
+        </figure>
+        <p><strong>Separación de capas:</strong> <em>interfaz</em> (disparadores) no conoce reglas; <em>orquestación</em> conoce el flujo pero no cómo se habla con cada sistema; <em>capacidades</em> tienen la lógica de negocio y son testeables aisladas; <em>integración</em> encapsula el "cómo" técnico. Es Clean/Hexagonal aplicada a una plataforma de automatización — ver <a data-goto="adr">ADR-001</a> y <a data-goto="adr">ADR-006</a>.</p>
+
+        <h4>¿Por qué no arrancar en microservicios? ¿No será difícil de mantener a futuro?</h4>
+        <p>Es la objeción correcta, y la respuesta distingue dos cosas que suelen confundirse: <strong>modularidad</strong> (fronteras y contratos claros) y <strong>distribución</strong> (desplegar cada módulo por separado). Lo que hace mantenible un sistema es la <strong>modularidad</strong>; la distribución es una <em>decisión operativa</em> que añade costo (red, latencia, consistencia eventual, observabilidad distribuida, DevOps) y que solo conviene pagar cuando aporta un beneficio concreto.</p>
+        <p>En este caso hay una razón de fondo: el problema que se está resolviendo es <strong>fragmentación extrema</strong> (12.000 taskbots dispersos). Saltar a "microservicios para todo" desde el día cero corre el riesgo real de cambiar 12.000 bots fragmentados por decenas de servicios distribuidos mal delimitados — un <strong>distributed monolith</strong>, que combina lo peor de ambos mundos: acoplado <em>y</em> difícil de operar. Con los límites de negocio aún sin validar (eso ocurre en la Ola 0), fijar fronteras de red prematuramente es caro de revertir.</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Enfoque</th><th>Mantenibilidad</th><th>Costo operativo</th><th>Riesgo en este caso</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Monolito acoplado</strong> (big ball of mud)</td><td><span class="pill p-hi">Baja</span></td><td><span class="pill p-lo">Bajo</span></td><td>Repite la deuda actual. <strong>Descartado.</strong></td></tr>
+            <tr><td><strong>Modular monolith</strong> (propuesto de inicio)</td><td><span class="pill p-lo">Alta</span> si los módulos están bien delimitados</td><td><span class="pill p-lo">Bajo</span></td><td>Bajo: fronteras revisables sin costo de red. Refactor interno barato.</td></tr>
+            <tr><td><strong>Microservicios desde día 0</strong></td><td><span class="pill p-md">Media</span></td><td><span class="pill p-hi">Alto</span></td><td>Alto: límites sin validar → distributed monolith. <strong>Prematuro.</strong></td></tr>
+            <tr><td><strong>Microservicios selectivos</strong> (destino evolutivo)</td><td><span class="pill p-lo">Alta</span></td><td><span class="pill p-md">Medio</span></td><td>Adecuado <em>cuando</em> el límite ya está probado por uso.</td></tr>
+          </tbody>
+        </table></div>
+        <p>La arquitectura <strong>no se queda como monolito</strong>: es evolutiva. Un módulo se promueve a microservicio cuando cumple al menos uno de estos criterios objetivos (registrados en un ADR de extracción):</p>
+        <ul>
+          <li><strong>Escala independiente:</strong> ese componente tiene un perfil de carga muy distinto al resto (p. ej. "notificación" con picos) y escalarlo aparte ahorra recursos.</li>
+          <li><strong>Ciclo de vida / cadencia propia:</strong> cambia mucho más rápido o más lento que el core y el despliegue acoplado lo frena.</li>
+          <li><strong>Aislamiento de fallas o de cumplimiento:</strong> requiere un blast radius acotado o un dominio regulatorio segregado.</li>
+          <li><strong>Ownership de otro equipo:</strong> lo mantiene un squad distinto y la frontera de despliegue reduce fricción (ley de Conway a favor).</li>
+        </ul>
+        <p>Como los módulos ya se comunican por <strong>contratos e interfaces</strong> (puertos), extraer uno a servicio es sustituir una llamada en proceso por una remota tras el mismo contrato — un cambio localizado, no una reescritura. Ese es exactamente el diseño que evita el problema de mantenimiento a futuro: se paga la complejidad distribuida <em>solo</em> donde y cuando rinde. Es la recomendación de "monolith-first" aplicada con disciplina de fronteras.</p>
+        <div class="callout tip"><div class="k">En una frase</div><p>No es "monolito vs microservicios", es <strong>modularidad primero, distribución bajo demanda</strong>: fronteras limpias desde el día uno, despliegue independiente solo cuando un criterio medible lo justifique.</p></div>
+      </article>
+
+      <article class="q" id="q6">
+        <span class="q-tag">Pregunta 6</span>
+        <h3>Cómo decidir: BPM vs n8n vs Power Platform vs microservicio vs RPA</h3>
+        <p>Con un <strong>árbol de decisión</strong> aplicado caso por caso, no por moda tecnológica:</p>
+        <figure class="diagram" data-title="Árbol de decisión tecnológica">
+          <div class="fig-head"><span class="t">Decisión: ¿dónde implemento este caso?</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+          <div class="canvas"><pre class="mermaid">
+flowchart TD
+  Start(["Caso de automatizacion"]) --> API{"El sistema destino<br/>expone API o integracion?"}
+  API -->|No| UIst{"UI estable y<br/>bajo volumen?"}
+  UIst -->|Si| RPA["RPA selectivo<br/>adaptador de borde"]:::rpa
+  UIst -->|No| Build["Priorizar exponer API<br/>o esperar integracion"]:::warn
+  API -->|Si| Logic{"Logica de negocio<br/>compleja, reglas o SLA?"}
+  Logic -->|Alta y con estado| Proc{"Proceso multipaso,<br/>humano en el loop,<br/>larga duracion?"}
+  Proc -->|Si| BPM["BPM<br/>orquestacion con estado,<br/>SLA, tareas humanas"]:::core
+  Proc -->|No| MS["Microservicio<br/>capacidad con escala o<br/>ciclo de vida propio"]:::cap
+  Logic -->|Media o integracion| Citizen{"Lo opera negocio?<br/>Ecosistema Microsoft?"}
+  Citizen -->|Si| PP["Power Platform<br/>low-code de negocio,<br/>gobernado"]:::pp
+  Citizen -->|No| N8N["n8n<br/>integracion glue,<br/>event-driven, rapido"]:::n8n
+  classDef core fill:#2C2A29,stroke:#2C2A29,color:#fff;
+  classDef cap fill:#ffffff,stroke:#2C2A29,color:#2C2A29;
+  classDef rpa fill:#fbeaea,stroke:#c0392b,color:#7d241b;
+  classDef pp fill:#eef1f3,stroke:#6b7075,color:#33414f;
+  classDef n8n fill:#eafaf1,stroke:#1e8e5a,color:#155e3b;
+  classDef warn fill:#fff6e0,stroke:#c98a00,color:#7a5600;
+          </pre></div>
+          <figcaption>Regla de oro: <strong>RPA solo si no hay API y la UI es estable</strong>. Entre las demás, el eje es <em>estado + complejidad</em> (BPM) vs <em>integración ligera</em> (n8n) vs <em>capacidad con escala propia</em> (microservicio) vs <em>ownership de negocio</em> (Power Platform).</figcaption>
+        </figure>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Opción</th><th>Úsala cuando…</th><th>Evítala cuando…</th></tr></thead>
+          <tbody>
+            <tr><td><strong>BPM</strong></td><td>Proceso largo, con estado, tareas humanas, SLA, cumplimiento.</td><td>Integración simple sin estado → sobredimensiona.</td></tr>
+            <tr><td><strong>n8n</strong></td><td>Glue/integración event-driven, prototipado rápido, muchos conectores.</td><td>Reglas críticas de negocio complejas o alta gobernanza transaccional.</td></tr>
+            <tr><td><strong>Power Platform</strong></td><td>Ecosistema Microsoft, ownership de negocio (citizen dev) gobernado.</td><td>Lógica core de alto rendimiento o portabilidad multi-cloud.</td></tr>
+            <tr><td><strong>Microservicio</strong></td><td>Capacidad reutilizable con escala/ciclo de vida propio y contrato claro.</td><td>El caso no justifica operar un servicio más (YAGNI).</td></tr>
+            <tr><td><strong>RPA selectivo</strong></td><td>No hay API y la UI es estable y de bajo volumen.</td><td>Existe API, alto volumen, o UI volátil.</td></tr>
+          </tbody>
+        </table></div>
+      </article>
+
+      <article class="q" id="q7">
+        <span class="q-tag">Pregunta 7</span>
+        <h3>Trazabilidad end-to-end (entrada → validación → ejecución → logging → salida)</h3>
+        <p>Todo se cuelga de un <strong><code>correlationId</code></strong> generado en la entrada y propagado en cada salto (contexto de traza). Cada etapa emite un evento estructurado con el mismo id, de modo que la ejecución completa se reconstruye consultando por ese id.</p>
+        <figure class="diagram" data-title="Secuencia de trazabilidad E2E">
+          <div class="fig-head"><span class="t">Secuencia · trazabilidad con correlationId</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+          <div class="canvas"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant TR as Disparador
+  participant OR as Orquestador
+  participant VA as Validacion
+  participant EX as Componente Ejecucion
+  participant AD as Adaptador (API/RPA)
+  participant OB as Observabilidad
+  TR->>OR: Solicitud + genera correlationId
+  OR->>OB: evento INICIO {cid, proceso, input-hash}
+  OR->>VA: valida(payload, cid)
+  VA-->>OR: OK / errores
+  OR->>OB: evento VALIDADO {cid, resultado}
+  OR->>EX: ejecutar(cmd, cid)
+  EX->>AD: invoca sistema destino (cid en header)
+  AD-->>EX: respuesta / fallo
+  EX->>OB: evento EJECUCION {cid, intento, latencia}
+  EX-->>OR: resultado
+  OR->>OB: evento SALIDA {cid, estado final, metricas}
+  OR-->>TR: respuesta + cid (para soporte)
+          </pre></div>
+          <figcaption>El <code>correlationId</code> viaja en headers/mensajes; la observabilidad indexa por él. Se registra un <em>hash</em> del input (no el input con PII) para auditar sin exponer datos sensibles.</figcaption>
+        </figure>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Etapa</th><th>Qué se traza</th><th>Dónde queda</th></tr></thead>
+          <tbody>
+            <tr><td>Entrada</td><td>cid, origen, tipo de disparador, hash de payload.</td><td>Log estructurado + span raíz.</td></tr>
+            <tr><td>Validación</td><td>reglas evaluadas, resultado, errores de negocio.</td><td>Evento VALIDADO + métrica de rechazo.</td></tr>
+            <tr><td>Ejecución</td><td>componente, adaptador, intento, latencia, idempotency-key.</td><td>Span hijo por adaptador.</td></tr>
+            <tr><td>Salida</td><td>estado final, efecto en sistema destino, duración total.</td><td>Evento SALIDA + métrica de negocio.</td></tr>
+          </tbody>
+        </table></div>
+      </article>
+
+      <article class="q" id="q8">
+        <span class="q-tag">Pregunta 8</span>
+        <h3>Seguridad, observabilidad y gobierno desde el diseño</h3>
+        <div class="grid grid-3">
+          <div class="card"><h4>Seguridad</h4><ul>
+            <li>Secretos en <strong>vault</strong>, nunca en el bot/flujo.</li>
+            <li><strong>Mínimo privilegio</strong> por proceso; identidades de servicio.</li>
+            <li>Validación y <em>sanitización</em> de entradas.</li>
+            <li>Logs <strong>sin PII</strong> (hashing/masking).</li>
+            <li>mTLS/OAuth servicio-a-servicio; auditoría de accesos.</li>
+          </ul></div>
+          <div class="card"><h4>Observabilidad</h4><ul>
+            <li>Logs <strong>estructurados</strong> (JSON) con <code>correlationId</code>.</li>
+            <li><strong>Trazas distribuidas</strong> (OpenTelemetry).</li>
+            <li>Métricas: éxito, latencia, reintentos, negocio.</li>
+            <li>Alertas por SLO; dashboards por proceso.</li>
+          </ul></div>
+          <div class="card"><h4>Gobierno</h4><ul>
+            <li><strong>Catálogo</strong> de procesos y componentes con dueño.</li>
+            <li>Versionado semántico + política de <em>reuse-first</em>.</li>
+            <li>Gates de arquitectura y seguridad en CI/CD.</li>
+            <li>Trazabilidad de auditoría (quién cambió qué).</li>
+          </ul></div>
+        </div>
+        <p>Punto central: seguridad, observabilidad y gobierno son <strong>plataforma compartida</strong>, no responsabilidad de cada bot. Ahí está una de las causas raíz de la deuda actual.</p>
+      </article>
+    </section>
+
+    <!-- ==================== BLOQUE C ==================== -->
+    <section class="page" id="bloqueC" data-title="Bloque C · Consolidación">
+      <div class="eyebrow">Bloque C</div>
+      <h1>Consolidación y reutilización</h1>
+      <p class="lede">Convertir 50 automatizaciones parecidas en pocos componentes — y garantizar que la arquitectura nueva no vuelva a fragmentarse.</p>
+
+      <article class="q" id="q9">
+        <span class="q-tag">Pregunta 9</span>
+        <h3>Consolidar 50 automatizaciones con lógica parecida</h3>
+        <p>Primero <strong>mido la similitud</strong> (no la asumo): clustering sobre pasos, sistemas tocados y reglas. De ahí sale el patrón común (el 80%) y las variaciones (el 20%). Luego aplico el patrón <strong>Template Method + Strategy</strong>: un flujo canónico con puntos de extensión donde las variantes inyectan su diferencia (configuración/estrategia), en vez de duplicar el flujo.</p>
+        <figure class="diagram" data-title="Consolidación: antes y después">
+          <div class="fig-head"><span class="t">De 50 variantes a 1 componente + configuración</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+          <div class="canvas"><pre class="mermaid">
+flowchart LR
+  subgraph Antes["Hoy · fragmentacion"]
+    b1["Bot 1"]:::rpa
+    b2["Bot 2"]:::rpa
+    b3["Bot ..."]:::rpa
+    b4["Bot 50"]:::rpa
+  end
+  subgraph Despues["Objetivo · componente + estrategias"]
+    core["Componente canonico<br/>(Template Method)"]:::core
+    s1{{"Strategy A<br/>(config)"}}:::cfg
+    s2{{"Strategy B"}}:::cfg
+    s3{{"Strategy C"}}:::cfg
+    core --> s1 & s2 & s3
+  end
+  Antes ==>|clustering y extraccion de patron| Despues
+  classDef rpa fill:#fbeaea,stroke:#c0392b,color:#7d241b;
+  classDef core fill:#2C2A29,stroke:#2C2A29,color:#fff;
+  classDef cfg fill:#FDDA24,stroke:#a9850a,color:#3a2f00;
+          </pre></div>
+          <figcaption>Las 50 variantes colapsan en un componente parametrizable. Las diferencias reales se vuelven <strong>datos/estrategias</strong>, no código duplicado. Lo que no encaja en el patrón se trata como excepción explícita, no forzada.</figcaption>
+        </figure>
+        <p>Regla anti-abstracción prematura (evitar el error opuesto): consolido cuando hay <strong>duplicación probada</strong> (regla de tres), no ante la primera coincidencia superficial. Una mala abstracción es peor que dos duplicados honestos.</p>
+      </article>
+
+      <article class="q" id="q10">
+        <span class="q-tag">Pregunta 10</span>
+        <h3>Evitar que la nueva arquitectura repita la fragmentación</h3>
+        <ul>
+          <li><strong>Reuse-first como política:</strong> antes de crear un componente, hay que probar que no existe uno en el catálogo. Gate en el pipeline.</li>
+          <li><strong>Ownership y plataforma central:</strong> un equipo dueño de los componentes compartidos (modelo de <em>Platform/Enablement team</em>), no cada squad haciendo lo suyo.</li>
+          <li><strong>Contratos y versionado:</strong> los componentes se consumen por contrato estable; romper compatibilidad tiene costo visible.</li>
+          <li><strong>Fitness functions:</strong> métricas automáticas de duplicación y acoplamiento que fallan el build si crece la fragmentación (arquitectura evolutiva medible).</li>
+          <li><strong>Golden paths / plantillas:</strong> crear un proceso nuevo parte de un scaffolding estándar, no de cero.</li>
+          <li><strong>Cultura:</strong> revisiones de arquitectura ligeras y catálogo visible — la fragmentación es tanto organizacional como técnica.</li>
+        </ul>
+        <div class="callout risk"><div class="k">Causa raíz que se ataca</div><p>Hoy hay 12.000 taskbots porque crear un bot nuevo era más barato que buscar y reutilizar. La solución no es solo técnica: es hacer que <strong>reutilizar sea el camino más fácil</strong> y crear-desde-cero requiera justificación.</p></div>
+      </article>
+
+      <article class="q" id="q11">
+        <span class="q-tag">Pregunta 11</span>
+        <h3>Catalogar y versionar componentes reutilizables</h3>
+        <p>Un <strong>catálogo de componentes</strong> (service catalog / registry) como fuente única, con metadata mínima obligatoria y <strong>versionado semántico</strong> (MAJOR.MINOR.PATCH):</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Metadata del componente</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td>Identidad + versión</td><td class="mono">consulta-cliente@2.3.1</td></tr>
+            <tr><td>Contrato / interfaz</td><td>OpenAPI / AsyncAPI publicado.</td></tr>
+            <tr><td>Dueño &amp; soporte</td><td>Squad responsable, canal, SLA.</td></tr>
+            <tr><td>Dependencias &amp; consumidores</td><td>Grafo de quién lo usa (impacto de cambios).</td></tr>
+            <tr><td>Estado de ciclo de vida</td><td><span class="pill p-lo">activo</span> <span class="pill p-md">deprecado</span> <span class="pill p-hi">retirado</span></td></tr>
+            <tr><td>Madurez / pruebas</td><td>Cobertura, nivel de certificación.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Versionado: <em>PATCH</em> = fix compatible, <em>MINOR</em> = feature compatible, <em>MAJOR</em> = ruptura (requiere migración de consumidores y ventana de coexistencia). Deprecación con aviso y fecha. El catálogo se integra al portal de desarrollador para que reutilizar sea <em>descubrible</em>. Ver <a data-goto="uml">galería UML → Componentes</a>.</p>
+      </article>
+    </section>
+
+    <!-- ==================== BLOQUE D ==================== -->
+    <section class="page" id="bloqueD" data-title="Bloque D · Implementación">
+      <div class="eyebrow">Bloque D</div>
+      <h1>Implementación técnica</h1>
+      <p class="lede">Del diseño a la operación: flujo con errores/reintentos/rollback, estrategia de pruebas para retirar bots con seguridad, documentación operable y métricas de valor a 90 días.</p>
+
+      <article class="q" id="q12">
+        <span class="q-tag">Pregunta 12</span>
+        <h3>Flujo técnico con manejo de errores, reintentos, rollback y alertamiento</h3>
+        <p>Diseño el proceso como una <strong>saga con compensación</strong>: cada paso con efecto externo es idempotente (idempotency-key), reintenta con <em>backoff exponencial</em> ante fallas transitorias, y si un paso irrecuperable falla, se ejecutan las <strong>compensaciones</strong> en orden inverso. Lo que no se puede reintentar ni compensar va a una <strong>dead-letter queue</strong> con alerta.</p>
+        <figure class="diagram" data-title="Actividad: errores, reintentos, rollback">
+          <div class="fig-head"><span class="t">Diagrama de actividad · resiliencia del flujo</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+          <div class="canvas"><pre class="mermaid">
+flowchart TD
+  A(["Inicio: recibe trabajo (cid)"]) --> B["Validar entrada"]
+  B -->|invalida| R1["Rechazo de negocio<br/>+ log + notifica origen"]:::warn
+  B -->|valida| C["Ejecutar paso N<br/>(idempotente)"]
+  C --> D{"Resultado?"}
+  D -->|OK| E{"Quedan pasos?"}
+  E -->|Si| C
+  E -->|No| F["Confirmar (commit)<br/>evento SALIDA OK"]:::good
+  D -->|Error transitorio| G{"Reintentos < max?"}
+  G -->|Si| H["Backoff exponencial<br/>+ jitter"] --> C
+  G -->|No| I["Compensar pasos previos<br/>(rollback en orden inverso)"]:::bad
+  D -->|Error permanente| I
+  I --> J["Enviar a DLQ<br/>+ ALERTA (on-call)"]:::bad
+  J --> K(["Fin: requiere intervencion"])
+  F --> L(["Fin OK"])
+  classDef good fill:#eafaf1,stroke:#1e8e5a,color:#155e3b;
+  classDef bad fill:#fbeaea,stroke:#c0392b,color:#7d241b;
+  classDef warn fill:#fff6e0,stroke:#c98a00,color:#7a5600;
+          </pre></div>
+          <figcaption>Reintentos solo para fallas <em>transitorias</em> (timeouts, 5xx); los errores permanentes (validación, 4xx de negocio) no se reintentan. La alerta lleva el <code>correlationId</code> para diagnóstico inmediato. El rollback usa compensaciones porque en sistemas distribuidos no hay transacción ACID global.</figcaption>
+        </figure>
+      </article>
+
+      <article class="q" id="q13">
+        <span class="q-tag">Pregunta 13</span>
+        <h3>Estrategia de pruebas antes de retirar un bot antiguo</h3>
+        <p>Nunca se apaga el bot viejo "de fe". Se prueba paridad con una <strong>pirámide de pruebas</strong> + verificación en producción:</p>
+        <ul>
+          <li><strong>Unitarias</strong> sobre componentes y reglas de negocio (rápidas, muchas).</li>
+          <li><strong>De contrato</strong> entre orquestador ↔ componentes ↔ adaptadores.</li>
+          <li><strong>Integración</strong> contra sandboxes de sistemas destino.</li>
+          <li><strong>E2E</strong> del <em>golden path</em> + casos borde.</li>
+          <li><strong>Shadow / parallel run:</strong> el proceso nuevo corre en paralelo al bot viejo con tráfico real y se comparan salidas hasta lograr paridad estadística.</li>
+          <li><strong>Canary + rollback:</strong> se desvía un % creciente de tráfico; si diverge, vuelve al bot viejo.</li>
+        </ul>
+        <p>Criterio de retiro: N días de paridad ≥ umbral acordado, cero incidencias críticas, runbook y dashboards listos. Solo entonces se activa el <em>kill switch</em> del bot antiguo. Casos borde a cubrir: entradas vacías/inválidas, duplicados, fallo del sistema externo, timeouts, alta concurrencia, reintentos.</p>
+      </article>
+
+      <article class="q" id="q14">
+        <span class="q-tag">Pregunta 14</span>
+        <h3>Documentar para que otro equipo lo opere tras tu salida</h3>
+        <p>Documentación <strong>viva y cercana al código</strong>, no un Word que envejece:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Para operar (runbook)</h4><ul>
+            <li>Qué hace el proceso y qué NO.</li>
+            <li>Diagrama de arquitectura + dependencias.</li>
+            <li>Cómo desplegar, reintentar, hacer rollback.</li>
+            <li>Alertas típicas → causa → acción (playbooks).</li>
+            <li>Contactos, SLAs, ventanas de mantenimiento.</li>
+          </ul></div>
+          <div class="card"><h4>Para evolucionar</h4><ul>
+            <li>ADRs (por qué se decidió así).</li>
+            <li>Contratos/OpenAPI de componentes.</li>
+            <li>Entrada en el catálogo con dueño.</li>
+            <li>Tests como documentación ejecutable.</li>
+            <li>README con <em>golden path</em> y setup local.</li>
+          </ul></div>
+        </div>
+        <p>Regla: si un dato vive en dos sitios, uno estará desactualizado. La fuente de verdad es el repo + catálogo; los diagramas se generan/versionan con el código (docs-as-code). Esta misma página es un ejemplo de entregable operable.</p>
+      </article>
+
+      <article class="q" id="q15">
+        <span class="q-tag">Pregunta 15</span>
+        <h3>Indicadores de valor capturado en los primeros 90 días</h3>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Categoría</th><th>Indicador</th><th>Por qué importa</th></tr></thead>
+          <tbody>
+            <tr><td>Reducción de deuda</td><td>Nº de taskbots retirados / consolidados; % de duplicación eliminada.</td><td>Mide el objetivo central (menos fragmentación).</td></tr>
+            <tr><td>Desmonte</td><td>% de tráfico fuera de Automation Anywhere; licencias liberadas.</td><td>Progreso hacia el corte 2027.</td></tr>
+            <tr><td>Reutilización</td><td>Nº de componentes publicados y consumidos por N procesos.</td><td>Evidencia de arquitectura reutilizable.</td></tr>
+            <tr><td>Confiabilidad</td><td>Tasa de éxito, MTTR, reintentos, incidencias.</td><td>La operación mejora, no solo cambia.</td></tr>
+            <tr><td>Valor de negocio</td><td>Horas/FTE ahorradas, tiempo de ciclo, costo por transacción.</td><td>Lenguaje de negocio, financia el programa.</td></tr>
+            <tr><td>Velocidad</td><td>Lead time para crear/cambiar una automatización.</td><td>La plataforma nueva debe ser más ágil que grabar un bot.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Se fija un <strong>baseline en la Ola 0</strong>; sin baseline no hay "valor capturado" defendible. Se reporta en un dashboard ejecutivo, no en slides manuales.</p>
+      </article>
+    </section>
+
+    <!-- ==================== BLOQUE E ==================== -->
+    <section class="page" id="bloqueE" data-title="Bloque E · Criterio">
+      <div class="eyebrow">Bloque E</div>
+      <h1>Trabajo en equipo y criterio</h1>
+      <p class="lede">Decisiones bajo presión, dependencias ocultas, comunicación con negocio y honestidad técnica: cómo se sostiene el control mientras se avanza rápido.</p>
+
+      <article class="q" id="q16">
+        <span class="q-tag">Pregunta 16</span>
+        <h3>Colaboración con negocio, arquitectura, seguridad y operación bajo presión</h3>
+        <p>Presión por velocidad no es excusa para perder control; es la razón para tener <strong>barandas (guardrails) que permitan ir rápido sin romper</strong>. Concretamente:</p>
+        <ul>
+          <li><strong>Golden paths</strong> preaprobados por arquitectura y seguridad: el camino rápido ya es el camino seguro.</li>
+          <li><strong>Definition of Done</strong> compartida que incluye seguridad y operabilidad — no negociable, pero ligera.</li>
+          <li>Rituales cortos: arquitectura y seguridad <em>embebidos</em> (no como gate al final que frena todo).</li>
+          <li>Backlog priorizado con negocio por <strong>valor/riesgo</strong> transparente; los trade-offs se deciden con datos, no por quien grita más.</li>
+          <li>Deuda técnica <strong>explícita y con dueño</strong> cuando se decide ir rápido: se acepta consciente, no se esconde.</li>
+        </ul>
+      </article>
+
+      <article class="q" id="q17">
+        <span class="q-tag">Pregunta 17</span>
+        <h3>Bot a retirar con dependencias no documentadas y riesgo crítico</h3>
+        <p><strong>Freno el retiro y descubro antes de actuar.</strong> Secuencia:</p>
+        <ol>
+          <li><strong>Observar, no apagar:</strong> instrumentar el bot y sus sistemas para mapear consumidores reales (quién lo llama, qué produce, quién depende del output).</li>
+          <li><strong>Descubrimiento activo:</strong> análisis de logs, tráfico y entrevistas con los dueños de proceso aguas abajo.</li>
+          <li><strong>Coexistencia obligatoria:</strong> el proceso nuevo corre en paralelo (shadow) hasta demostrar que cubre todas las dependencias detectadas.</li>
+          <li><strong>Retiro reversible:</strong> primero "silenciar" el bot con kill switch y monitoreo, no borrarlo; si algo se rompe, se reactiva.</li>
+          <li>Solo tras una ventana sin incidencias se descomisiona definitivamente.</li>
+        </ol>
+        <div class="callout warn"><div class="k">Principio</div><p>Ante dependencias ocultas y proceso crítico, el riesgo asimétrico manda: el costo de esperar y observar es bajo; el de apagar a ciegas puede ser un incidente en producción. <em>Reversibilidad primero.</em></p></div>
+      </article>
+
+      <article class="q" id="q18">
+        <span class="q-tag">Pregunta 18</span>
+        <h3>Explicar a negocio por qué un caso no debe seguir automatizándose por UI</h3>
+        <p>Traduzco lo técnico a <strong>riesgo y costo que el negocio siente</strong>, sin jerga:</p>
+        <blockquote class="callout"><p>"Automatizar sobre la pantalla funciona hasta que la pantalla cambia. Cada actualización del sistema puede romper el proceso sin aviso, y eso significa <strong>paradas no planeadas y retrabajo</strong>. Al conectarnos por la vía integrada (híbrida), el proceso deja de depender de cómo se ve la pantalla: es más estable, más rápido y auditable. Mantener la UI aquí es como construir sobre arena: barato hoy, caro cada vez que tiembla."</p></blockquote>
+        <p>Acompaño con datos: histórico de fallas por cambios de UI, tiempo perdido y el costo de oportunidad. La decisión se presenta como <strong>reducción de riesgo</strong>, no como capricho técnico.</p>
+      </article>
+
+      <article class="q" id="q19">
+        <span class="q-tag">Pregunta 19</span>
+        <h3>Cuando negocio pide una solución, pero hay una alternativa mejor</h3>
+        <p>Negocio es dueño del <strong>problema y el resultado</strong>; yo aporto el <strong>cómo</strong>. No impongo ni acato ciegamente: hago <em>consultoría técnica</em>.</p>
+        <ol>
+          <li>Entender el <strong>outcome</strong> real detrás de la solución pedida (el "por qué", no el "qué").</li>
+          <li>Presentar la alternativa con <strong>trade-offs comparados</strong>: costo, tiempo, riesgo, mantenibilidad — con la opción pedida incluida honestamente.</li>
+          <li>Si hay dudas, un <strong>spike/PoC pequeño</strong> que muestre evidencia en vez de opiniones.</li>
+          <li>La decisión final es conjunta y documentada (ADR). Si negocio insiste con contexto que yo no tenía, puede tener razón.</li>
+        </ol>
+      </article>
+
+      <article class="q" id="q20">
+        <span class="q-tag">Pregunta 20</span>
+        <h3>Error técnico/de diseño muy probable — y cómo lo evitaría</h3>
+        <p>El error más probable: <strong>hacer un "lift-and-shift" 1:1</strong> — reescribir los 12.000 taskbots tal cual en la tecnología nueva. Se migraría la fragmentación intacta, con más costo y sin capturar valor: mismos duplicados, ahora en n8n/BPM.</p>
+        <p><strong>Cómo lo evito:</strong> la Ola 0 de discovery/racionalización es <em>gate obligatorio</em> — no se migra nada sin catálogo, sin decisión (migrar/consolidar/retirar) y sin baseline. Se mide reducción de duplicación como KPI de primera línea, y las <em>fitness functions</em> fallan el build si la fragmentación crece. Segundo error probable: subestimar el <strong>RPA residual sin API</strong> y quedar bloqueado cerca de 2027; se mitiga identificándolo temprano y presupuestando la exposición de APIs como ruta crítica.</p>
+      </article>
+    </section>
+
+    <!-- ==================== UML ==================== -->
+    <section class="page" id="uml" data-title="Galería UML">
+      <div class="eyebrow">Ingeniería · Modelado</div>
+      <h1>Galería de diagramas UML</h1>
+      <p class="lede">Diagramas útiles para evaluar la solución (no decorativos). Cada uno: <strong>clic en “Zoom”</strong> para verlo a pantalla completa con pan/zoom, o <strong>“Descargar”</strong> el SVG.</p>
+
+      <h2>Casos de uso</h2>
+      <figure class="diagram" data-title="Casos de uso — plataforma de automatización">
+        <div class="fig-head"><span class="t">Casos de uso</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+        <div class="canvas"><pre class="mermaid">
+flowchart LR
+  neg(["Analista de Negocio"]):::actor
+  dev(["Ingeniero de Plataforma"]):::actor
+  ops(["Operacion / On-call"]):::actor
+  arq(["Arquitecto / Seguridad"]):::actor
+  subgraph SYS["Plataforma de automatizacion"]
+    u1(["Solicitar automatizacion"])
+    u2(["Descubrir / reutilizar componente"])
+    u3(["Orquestar proceso"])
+    u4(["Monitorear y alertar"])
+    u5(["Migrar / retirar bot"])
+    u6(["Gobernar catalogo"])
+  end
+  neg --> u1
+  neg --> u2
+  dev --> u2
+  dev --> u3
+  dev --> u5
+  ops --> u4
+  arq --> u6
+  u3 -.include.-> u4
+  u5 -.include.-> u4
+  classDef actor fill:#2C2A29,stroke:#2C2A29,color:#fff;
+        </pre></div>
+        <figcaption>Actores y capacidades principales. La reutilización de componentes es un caso de uso de primera clase, tanto para negocio como para ingeniería.</figcaption>
+      </figure>
+
+      <h2>Componentes</h2>
+      <figure class="diagram" data-title="Diagrama de componentes">
+        <div class="fig-head"><span class="t">Componentes &amp; capas</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+        <div class="canvas"><pre class="mermaid">
+flowchart TB
+  subgraph IF["Interfaz"]
+    api["API Gateway / Triggers"]:::l
+  end
+  subgraph APP["Aplicacion / Orquestacion"]
+    orq["Orquestador de procesos"]:::l
+    saga["Gestor de saga/compensacion"]:::l
+  end
+  subgraph DOM["Capacidades (logica de negocio)"]
+    val["Validacion"]:::c
+    cli["Consulta cliente"]:::c
+    notif["Notificacion"]:::c
+    reg["Reglas de negocio"]:::c
+  end
+  subgraph INFRA["Integracion / Infra"]
+    adpApi["Adaptador API/iPaaS"]:::i
+    adpRpa["Adaptador RPA selectivo"]:::i
+    cat["Catalogo / Registry"]:::i
+    obs["Observabilidad (OTel)"]:::i
+    vault["Secret Vault"]:::i
+  end
+  api --> orq --> saga
+  saga --> val & cli & notif
+  val & cli & notif --> reg
+  val & cli & notif --> adpApi & adpRpa
+  orq -.publica.-> cat
+  saga -.traza.-> obs
+  adpApi -.secreto.-> vault
+  classDef l fill:#2C2A29,stroke:#2C2A29,color:#fff;
+  classDef c fill:#ffffff,stroke:#2C2A29,color:#2C2A29;
+  classDef i fill:#eef1f3,stroke:#6b7075,color:#33414f;
+        </pre></div>
+        <figcaption>Dependencias apuntan hacia adentro (Dependency Inversion): las capacidades no conocen a los adaptadores concretos, solo puertos. Ver <a data-goto="adr">ADR-001</a>.</figcaption>
+      </figure>
+
+      <h2>Secuencia — flujo principal</h2>
+      <figure class="diagram" data-title="Secuencia del flujo principal">
+        <div class="fig-head"><span class="t">Secuencia · ejecución con reintento</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+        <div class="canvas"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as Disparador
+  participant O as Orquestador
+  participant S as Saga
+  participant C as Capacidad
+  participant A as Adaptador
+  participant X as Sistema destino
+  U->>O: iniciar(proceso, payload, cid)
+  O->>S: ejecutar plan de pasos
+  loop por cada paso
+    S->>C: invocar(paso, cid)
+    C->>A: llamar(sistema, idem-key)
+    A->>X: request
+    alt exito
+      X-->>A: 200
+      A-->>C: ok
+      C-->>S: paso ok
+    else fallo transitorio
+      X-->>A: 5xx / timeout
+      A-->>C: error
+      C-->>S: reintentar (backoff)
+    end
+  end
+  S-->>O: resultado final
+  O-->>U: estado + cid
+        </pre></div>
+        <figcaption>El plan de saga controla el avance paso a paso; cada llamada externa lleva idempotency-key y <code>cid</code>.</figcaption>
+      </figure>
+
+      <h2>Roadmap de olas</h2>
+      <figure class="diagram" data-title="Roadmap de migración por olas">
+        <div class="fig-head"><span class="t">Gantt · olas hasta Dic 2027</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+        <div class="canvas"><pre class="mermaid">
+gantt
+  title Migracion por olas hacia el corte de Automation Anywhere
+  dateFormat YYYY-MM
+  axisFormat %Y-%m
+  section Fundacion
+  Ola 0 Discovery y catalogo      :a0, 2025-08, 2M
+  Ola 1 Plataforma y pilotos      :a1, after a0, 3M
+  section Migracion
+  Ola 2 Quick wins y componentes  :a2, after a1, 4M
+  Ola 3 Volumen por dominio       :a3, after a2, 6M
+  Ola 4 Volumen por dominio       :a4, after a3, 6M
+  section Cierre
+  Ola final Complejos & RPA sel.  :a5, after a4, 5M
+  Corte AA como core              :milestone, m1, 2027-12, 0d
+        </pre></div>
+        <figcaption>Secuencia indicativa; el número de olas de volumen escala con la capacidad de squads disponible.</figcaption>
+      </figure>
+
+      <h2>Contexto (C4 nivel 1)</h2>
+      <figure class="diagram" data-title="Contexto del sistema (C4)">
+        <div class="fig-head"><span class="t">C4 · Contexto</span><div class="tools"><span class="tag">Mermaid</span></div></div>
+        <div class="canvas"><pre class="mermaid">
+flowchart TB
+  neg(["Negocio / Usuarios"]):::actor
+  plat["Plataforma de Automatizacion Evolutiva"]:::core
+  aa["Automation Anywhere<br/>(en desmonte)"]:::legacy
+  ext[("Sistemas core, ERP,<br/>portales, terceros")]:::sys
+  gov["Gobierno, Seguridad,<br/>Observabilidad"]:::gov
+  neg --> plat
+  plat --> ext
+  plat -. estrangula .-> aa
+  aa --> ext
+  plat --- gov
+  classDef actor fill:#2C2A29,stroke:#2C2A29,color:#fff;
+  classDef core fill:#3a3835,stroke:#2C2A29,color:#fff;
+  classDef legacy fill:#fbeaea,stroke:#c0392b,color:#7d241b;
+  classDef sys fill:#f4f4f4,stroke:#6b7075,color:#33414f;
+  classDef gov fill:#eafaf1,stroke:#1e8e5a,color:#155e3b;
+        </pre></div>
+        <figcaption>Strangler Fig: la plataforma nueva absorbe tráfico progresivamente hasta apagar Automation Anywhere como core.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ==================== ADR ==================== -->
+    <section class="page" id="adr" data-title="ADRs">
+      <div class="eyebrow">Ingeniería · Decisiones</div>
+      <h1>Architecture Decision Records</h1>
+      <p class="lede">Decisiones registradas para que otro equipo entienda el <em>porqué</em>, no solo el <em>qué</em>.</p>
+
+      <div class="card">
+        <h3>ADR-001 · Arquitectura evolutiva Strangler Fig con capas limpias</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> Hay que apagar Automation Anywhere como core antes de 2027 sin detener la operación, y sin heredar la fragmentación de 12.000 taskbots.</p>
+        <p><strong>Decisión:</strong> Migración evolutiva (Strangler Fig) hacia una arquitectura en capas (interfaz/orquestación/capacidades/integración) con dependencias hacia adentro. No big-bang, no reescritura 1:1.</p>
+        <p><strong>Consecuencias:</strong> (+) Riesgo acotado por olas, coexistencia posible, valor incremental. (−) Periodo de convivencia de dos plataformas; requiere disciplina de gobierno.</p>
+        <p><strong>Alternativas consideradas:</strong> Big-bang (rechazado: riesgo inaceptable en operación crítica); lift-and-shift 1:1 (rechazado: perpetúa deuda).</p>
+      </div>
+
+      <div class="card">
+        <h3>ADR-002 · Separación dominio/infraestructura vía puertos y adaptadores</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> La causa raíz de la fragilidad actual es el acoplamiento de la lógica de negocio a la UI y a la plataforma.</p>
+        <p><strong>Decisión:</strong> Lógica de negocio en componentes de capacidad que dependen de <em>puertos</em>; los sistemas externos (incl. RPA) se implementan como <em>adaptadores</em> intercambiables.</p>
+        <p><strong>Consecuencias:</strong> (+) Testabilidad, portabilidad, RPA reemplazable sin tocar el proceso. (−) Una capa de indirección adicional; hay que resistir la tentación de saltarse los puertos.</p>
+        <p><strong>Alternativas consideradas:</strong> Lógica dentro de los flujos del orquestador (rechazado: reproduce el acoplamiento actual).</p>
+      </div>
+
+      <div class="card">
+        <h3>ADR-003 · Selección tecnológica por árbol de decisión, no por estándar único</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> Los casos varían: unos son procesos con estado, otros integración ligera, otros ownership de negocio, otros sin API.</p>
+        <p><strong>Decisión:</strong> Elegir BPM / n8n / Power Platform / microservicio / RPA selectivo con el árbol de decisión del Bloque B, registrando la elección por caso.</p>
+        <p><strong>Consecuencias:</strong> (+) Herramienta adecuada al problema, sin sobre-ingeniería. (−) Heterogeneidad tecnológica: se acota con golden paths y catálogo.</p>
+        <p><strong>Alternativas consideradas:</strong> "Todo a un BPM" o "todo a microservicios" (rechazados: fuerzan el patrón y aumentan costo/complejidad).</p>
+      </div>
+
+      <div class="card">
+        <h3>ADR-004 · Resiliencia mediante saga con compensación e idempotencia</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> Los procesos tocan múltiples sistemas sin transacción ACID global; se requieren reintentos y rollback seguros.</p>
+        <p><strong>Decisión:</strong> Patrón saga con pasos idempotentes, reintentos con backoff para fallas transitorias y compensaciones en orden inverso; DLQ + alerta para lo irrecuperable.</p>
+        <p><strong>Consecuencias:</strong> (+) Consistencia eventual controlada y operable. (−) Diseñar compensaciones tiene costo; requiere idempotency-keys disciplinadas.</p>
+        <p><strong>Alternativas consideradas:</strong> Transacciones distribuidas 2PC (rechazado: acoplamiento y fragilidad).</p>
+      </div>
+
+      <div class="card">
+        <h3>ADR-005 · Catálogo versionado y política reuse-first</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> Sin gobierno, la arquitectura nueva reproduciría los 12.000 taskbots.</p>
+        <p><strong>Decisión:</strong> Catálogo central de componentes con versionado semántico, ownership y gate de reutilización en CI/CD + fitness functions de duplicación.</p>
+        <p><strong>Consecuencias:</strong> (+) Fragmentación medible y contenida. (−) Overhead de gobierno; requiere un equipo de plataforma dueño.</p>
+        <p><strong>Alternativas consideradas:</strong> Reutilización "por convención/cultura" sin herramienta (rechazado: no escala, ya falló).</p>
+      </div>
+
+      <div class="card">
+        <h3>ADR-006 · Modular monolith primero, microservicios por demanda</h3>
+        <p><strong>Estado:</strong> <span class="pill p-lo">Aceptado</span></p>
+        <p><strong>Contexto:</strong> El problema es fragmentación extrema; los límites de negocio aún no están validados (se validan en la Ola 0). Microservicios desde el día cero arriesgan un <em>distributed monolith</em>: costo operativo alto sin beneficio y fronteras caras de revertir.</p>
+        <p><strong>Decisión:</strong> Arrancar como <em>modular monolith</em> con bounded contexts y contratos explícitos entre módulos (puertos). Extraer una capacidad a microservicio solo cuando cumpla un criterio objetivo: escala independiente, cadencia de cambio propia, aislamiento de fallas/cumplimiento u ownership de otro equipo.</p>
+        <p><strong>Consecuencias:</strong> (+) Alta mantenibilidad con bajo costo operativo inicial; extracción localizada (cambiar llamada en proceso por remota tras el mismo contrato). (−) Requiere disciplina para no acoplar módulos "porque es fácil"; se controla con fitness functions y revisión de fronteras.</p>
+        <p><strong>Alternativas consideradas:</strong> Microservicios desde día 0 (rechazado: prematuro, distributed monolith); monolito acoplado (rechazado: repite la deuda actual).</p>
+      </div>
+    </section>
+
+    <!-- ==================== REVIEW ==================== -->
+    <section class="page" id="review" data-title="Revisión crítica">
+      <div class="eyebrow">QA · Revisión de diseño</div>
+      <h1>Revisión crítica</h1>
+      <p class="lede">Autoevaluación honesta de la propuesta: fortalezas, límites conocidos y qué se mejoraría con más tiempo.</p>
+
+      <div class="grid grid-2">
+        <div class="card"><h4>¿Cumple el reto?</h4><p>Sí: responde las 20 preguntas de los 5 bloques con criterio y las aterriza en arquitectura, diagramas y decisiones. El foco está en el objetivo real (desmontar el core sin heredar deuda), no en producir código por producirlo.</p></div>
+        <div class="card"><h4>¿Está justificada la arquitectura?</h4><p>Sí, con alternativas descartadas explícitas (big-bang, lift-and-shift, todo-a-un-BPM, microservicios día-0) y ADRs. La elección tecnológica es por árbol de decisión, evitando dogma.</p></div>
+        <div class="card"><h4>¿Hay sobre-ingeniería?</h4><p>Se evitó conscientemente: no se modeló un dominio DDD inexistente, microservicios solo donde aportan, RPA no se sataniza. El riesgo opuesto (sub-especificar la PoC) se reconoce abajo.</p></div>
+        <div class="card"><h4>¿Deuda técnica / puntos débiles?</h4><p>La propuesta es de nivel estrategia+diseño; falta una implementación de referencia ejecutable para el requisito "localmente reproducible" (RF-07). Es la principal brecha para llevar a un 10.</p></div>
+      </div>
+
+      <h3>Preguntas difíciles que anticipo</h3>
+      <ul>
+        <li><strong>"¿Cómo mides realmente la similitud de 12.000 bots?"</strong> — Respuesta: clustering sobre metadata + pasos + sistemas; la Ola 0 lo valida con datos, no con supuestos.</li>
+        <li><strong>"¿No es riesgoso operar dos plataformas hasta 2027?"</strong> — Sí, y es un trade-off aceptado del Strangler Fig; el control está en las olas con gates y kill switch.</li>
+        <li><strong>"¿Por qué no un estándar único?"</strong> — Porque los casos son heterogéneos; forzar uno solo aumenta costo. Se acota la heterogeneidad con golden paths.</li>
+        <li><strong>"¿Y si no hay APIs?"</strong> — Es el mayor riesgo de cronograma; se identifica temprano y se presupuesta la exposición de APIs como ruta crítica.</li>
+      </ul>
+
+      <h3>¿Qué mejoraría con más tiempo?</h3>
+      <ul>
+        <li>Una <strong>PoC ejecutable local</strong> (docker-compose: orquestador + componente + adaptador simulado + trazas) que demuestre saga/reintentos/rollback y trazabilidad por <code>correlationId</code>.</li>
+        <li>Un <strong>modelo cuantitativo</strong> del backlog: simular olas vs capacidad de squads para estimar la fecha de corte con confianza.</li>
+        <li>Fitness functions concretas y su umbral inicial.</li>
+      </ul>
+
+      <h2>Calificación</h2>
+      <div class="card">
+        <div class="score"><span class="lab">Cumplimiento del reto</span><span class="bar"><i style="width:92%"></i></span><span class="v">9.2</span></div>
+        <div class="score"><span class="lab">Arquitectura &amp; justificación</span><span class="bar"><i style="width:90%"></i></span><span class="v">9.0</span></div>
+        <div class="score"><span class="lab">Criterio y trade-offs</span><span class="bar"><i style="width:93%"></i></span><span class="v">9.3</span></div>
+        <div class="score"><span class="lab">Diagramas &amp; documentación</span><span class="bar"><i style="width:91%"></i></span><span class="v">9.1</span></div>
+        <div class="score"><span class="lab">Implementación ejecutable</span><span class="bar"><i class="y" style="width:60%"></i></span><span class="v">6.0</span></div>
+        <hr>
+        <div class="score"><span class="lab"><strong>Global</strong></span><span class="bar"><i style="width:88%"></i></span><span class="v"><strong>8.8</strong></span></div>
+      </div>
+      <p>Como propuesta estratégica y de arquitectura defendible en entrevista, es sólida (8.8/10). Para un 9.5+ falta materializar la PoC local reproducible — brecha ya identificada y acotada.</p>
+
+      <h2>Mejoras futuras</h2>
+      <ul>
+        <li>PoC local + pipeline de <em>parallel run</em> automatizado para certificar paridad.</li>
+        <li>Portal de desarrollador con catálogo, scaffolding y métricas de reutilización en vivo.</li>
+        <li>Motor de discovery asistido (análisis de logs/UI) para acelerar la Ola 0.</li>
+        <li>Política de retiro de RPA residual con fechas y presupuesto de exposición de APIs.</li>
+      </ul>
+
+    </section>
+
+  </div>
+
+  <!-- ============ FOOTER GLOBAL ============ -->
+  <footer class="site-foot">
+    <div class="site-foot-in">
+      <div class="sf-brand">
+        <img class="sf-logo" src="assets/logo-bancolombia.svg" alt="Bancolombia" width="92" height="26">
+        <div class="sf-brandtxt">
+          <b>Prueba Técnica A</b>
+          <span>Evolución de RPA hacia una arquitectura modular evolutiva</span>
+        </div>
+      </div>
+      <div class="sf-author">
+        <span class="sf-by">Diseñado y presentado por</span>
+        <a class="sf-name" href="https://www.linkedin.com/in/bccruzo/" target="_blank" rel="noopener noreferrer">
+          Briyid Catalina Cruz Ostos
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-2px;margin-left:5px"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+        </a>
+        <span class="sf-date" id="sfDate">Julio 2026</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<!-- ============ LIGHTBOX ============ -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lb-bar">
+    <span class="lb-t" id="lbTitle">Diagrama</span>
+    <span class="sp">
+      <button id="lbZoomOut">– Zoom</button>
+      <button id="lbZoomIn">+ Zoom</button>
+      <button id="lbReset">Reset</button>
+      <button id="lbSvg">Descargar SVG</button>
+      <button id="lbPng">Descargar PNG</button>
+      <button id="lbClose">✕ Cerrar</button>
+    </span>
+  </div>
+  <div class="lb-stage" id="lbStage">
+    <div class="lb-inner" id="lbInner"></div>
+    <div class="lb-hint">Arrastra para mover · rueda para zoom</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var pages = document.querySelectorAll('.page');
+  var navLinks = document.querySelectorAll('#subnav a');
+
+  function goto(id){
+    var target = document.getElementById(id);
+    if(!target) return;
+    pages.forEach(function(p){ p.classList.toggle('active', p.id===id); });
+    navLinks.forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-goto')===id); });
+    // centrar el tab activo del subnav
+    var act = document.querySelector('#subnav a.active');
+    if(act && act.scrollIntoView) act.scrollIntoView({inline:'center', block:'nearest'});
+    window.scrollTo({top:0, behavior:'auto'});
+    if(history.replaceState) history.replaceState(null,'','#'+id);
+  }
+
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-goto]');
+    if(el){ e.preventDefault(); goto(el.getAttribute('data-goto')); }
+  });
+
+  var initial = (location.hash||'').replace('#','');
+  if(initial && document.getElementById(initial)) goto(initial);
+
+  // Menú móvil: lleva al subnav
+  var mb = document.getElementById('menuBtn');
+  if(mb) mb.addEventListener('click', function(){
+    document.querySelector('.subnav').scrollIntoView({behavior:'smooth'});
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function(){
+    pages.forEach(function(p){ p.classList.add('active'); });
+    window.print();
+    setTimeout(function(){
+      var active = (location.hash||'#overview').replace('#','');
+      pages.forEach(function(p){ p.classList.toggle('active', p.id===active); });
+    }, 400);
+  });
+
+  /* ---------- Lightbox de diagramas ---------- */
+  var lb = document.getElementById('lightbox');
+  var lbInner = document.getElementById('lbInner');
+  var lbStage = document.getElementById('lbStage');
+  var lbTitle = document.getElementById('lbTitle');
+  var state = {scale:1, x:0, y:0, dragging:false, sx:0, sy:0};
+
+  function applyTransform(){
+    lbInner.style.transform = 'translate('+state.x+'px,'+state.y+'px) scale('+state.scale+')';
+  }
+  function openLightbox(svgEl, title){
+    if(!svgEl) return;
+    var clone = svgEl.cloneNode(true);
+    clone.removeAttribute('style'); clone.style.maxWidth='none';
+    lbInner.innerHTML=''; lbInner.appendChild(clone);
+    lbTitle.textContent = title || 'Diagrama';
+    state.scale=1; state.x=40; state.y=40; applyTransform();
+    lb.classList.add('open'); lb.setAttribute('aria-hidden','false');
+  }
+  function closeLightbox(){ lb.classList.remove('open'); lb.setAttribute('aria-hidden','true'); lbInner.innerHTML=''; }
+
+  function decorateFigures(){
+    document.querySelectorAll('figure.diagram').forEach(function(fig){
+      if(fig.dataset.decorated) return;
+      var svg = fig.querySelector('.mermaid svg');
+      if(!svg) return;
+      fig.dataset.decorated='1';
+      var tools = fig.querySelector('.fig-head .tools');
+      var title = fig.getAttribute('data-title') || 'Diagrama';
+      var zBtn = document.createElement('button'); zBtn.className='mini'; zBtn.textContent='⤢ Zoom';
+      var dBtn = document.createElement('button'); dBtn.className='mini'; dBtn.textContent='↓ SVG';
+      zBtn.addEventListener('click', function(){ openLightbox(fig.querySelector('.mermaid svg'), title); });
+      dBtn.addEventListener('click', function(){ downloadSvg(fig.querySelector('.mermaid svg'), title); });
+      tools.insertBefore(dBtn, tools.firstChild);
+      tools.insertBefore(zBtn, tools.firstChild);
+      var canvas = fig.querySelector('.canvas');
+      canvas.style.cursor='zoom-in';
+      canvas.addEventListener('click', function(){ openLightbox(fig.querySelector('.mermaid svg'), title); });
+    });
+  }
+  var mo = new MutationObserver(function(){ decorateFigures(); });
+  mo.observe(document.body, {childList:true, subtree:true});
+  window.addEventListener('load', function(){ setTimeout(decorateFigures, 300); setTimeout(decorateFigures, 1200); });
+
+  function svgToString(svg){
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    clone.style.background='#ffffff';
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+  }
+  function downloadBlob(blob, name){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  function slug(t){ return (t||'diagrama').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  function downloadSvg(svg, title){ if(!svg) return; downloadBlob(new Blob([svgToString(svg)], {type:'image/svg+xml'}), slug(title)+'.svg'); }
+  function downloadPng(svg, title){
+    if(!svg) return;
+    var xml = svgToString(svg);
+    var box = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width ? svg.viewBox.baseVal : {width:svg.clientWidth||1200, height:svg.clientHeight||800};
+    var scale = 2, img = new Image();
+    img.onload = function(){
+      var c = document.createElement('canvas');
+      c.width=(box.width||1200)*scale; c.height=(box.height||800)*scale;
+      var ctx=c.getContext('2d'); ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(b){ if(b) downloadBlob(b, slug(title)+'.png'); }, 'image/png');
+    };
+    img.onerror = function(){ downloadSvg(svg, title); };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
+  }
+
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbZoomIn').addEventListener('click', function(){ state.scale=Math.min(8,state.scale*1.25); applyTransform(); });
+  document.getElementById('lbZoomOut').addEventListener('click', function(){ state.scale=Math.max(0.2,state.scale/1.25); applyTransform(); });
+  document.getElementById('lbReset').addEventListener('click', function(){ state.scale=1; state.x=40; state.y=40; applyTransform(); });
+  document.getElementById('lbSvg').addEventListener('click', function(){ downloadSvg(lbInner.querySelector('svg'), lbTitle.textContent); });
+  document.getElementById('lbPng').addEventListener('click', function(){ downloadPng(lbInner.querySelector('svg'), lbTitle.textContent); });
+
+  lbStage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var delta = e.deltaY < 0 ? 1.12 : 1/1.12;
+    state.scale = Math.max(0.2, Math.min(8, state.scale*delta));
+    applyTransform();
+  }, {passive:false});
+  lbStage.addEventListener('mousedown', function(e){ state.dragging=true; state.sx=e.clientX-state.x; state.sy=e.clientY-state.y; lbStage.classList.add('grabbing'); });
+  window.addEventListener('mousemove', function(e){ if(!state.dragging) return; state.x=e.clientX-state.sx; state.y=e.clientY-state.sy; applyTransform(); });
+  window.addEventListener('mouseup', function(){ state.dragging=false; lbStage.classList.remove('grabbing'); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && lb.classList.contains('open')) closeLightbox(); });
+
+  /* ---------- Fecha del footer ---------- */
+  try{
+    var d = new Date();
+    var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var el = document.getElementById('sfDate');
+    if(el) el.textContent = meses[d.getMonth()].charAt(0).toUpperCase()+meses[d.getMonth()].slice(1)+' '+d.getFullYear();
+  }catch(e){}
+
+  /* ---------- Render de Mermaid ---------- */
+  if(window.__initMermaid) window.__initMermaid();
+
+})();
+</script>
+</body>
+</html>

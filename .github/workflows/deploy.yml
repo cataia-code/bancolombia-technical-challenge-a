@@ -1,0 +1,78 @@
+name: Deploy propuesta a GitHub Pages
+
+# Publica el sitio estático de docs/ en GitHub Pages en cada push a main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permisos mínimos requeridos por el despliegue de Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un solo despliegue a la vez; no cancela el que esté en curso.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ---- Verificación básica antes de publicar ----
+  verify:
+    name: Verificar sitio
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Estructura esperada existe
+        run: |
+          test -f docs/index.html || { echo "Falta docs/index.html"; exit 1; }
+          test -f docs/assets/logo-bancolombia.svg || { echo "Falta el logo"; exit 1; }
+          echo "Estructura OK"
+
+      - name: HTML bien formado (validación ligera)
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y libxml2-utils
+          # Validación tolerante: falla solo ante errores graves de parseo.
+          xmllint --html --noout docs/index.html 2>errores.txt || true
+          if grep -Ei "error : (Premature end|Opening and ending)" errores.txt; then
+            echo "HTML con errores estructurales:"; cat errores.txt; exit 1
+          fi
+          echo "HTML sin errores estructurales graves"
+
+      - name: Enlaces internos a assets existen
+        run: |
+          grep -q 'assets/logo-bancolombia.svg' docs/index.html || { echo "El index no referencia el logo"; exit 1; }
+          echo "Referencias OK"
+
+  # ---- Build del artefacto de Pages ----
+  build:
+    name: Build Pages
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto (carpeta docs/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs
+
+  # ---- Deploy a GitHub Pages ----
+  deploy:
+    name: Deploy Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar
+        id: deployment
+        uses: actions/deploy-pages@v4
