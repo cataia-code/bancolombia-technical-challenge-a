@@ -40,12 +40,30 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 │   ├── index.html                # Aplicación de una sola página (SPA) autocontenida
 │   └── assets/
 │       └── logo-bancolombia.svg  # Isotipo + wordmark oficial
+├── poc/                          # PoC ejecutable: saga, reintentos, DLQ, compensación
+│   ├── src/                      # motor, componentes, adaptadores, infra, app (FastAPI)
+│   ├── tests/                    # 9 tests (motor + flujo)
+│   ├── demo.py                   # demo de trazas sin infraestructura
+│   └── docker-compose.yml        # orquestador + mock-api + redis
 ├── challenge/
 │   └── parte-a-prueba-senior.pdf # Enunciado original del reto
 ├── .github/workflows/
 │   └── deploy.yml                # CI/CD: verificación + despliegue a Pages
 └── README.md
 ```
+
+## PoC ejecutable (`/poc`)
+
+Materializa el patrón técnico de la propuesta (Pregunta 12): saga con **reintentos + backoff**, **compensación** (rollback), **DLQ**, **idempotencia** y **trazabilidad por `correlationId`**. Diseñada con puertos y adaptadores.
+
+```bash
+cd poc
+python -m pytest tests/ -q     # 9 tests (motor + flujo)
+python demo.py                 # traza de 3 escenarios sin infraestructura
+docker compose up --build      # stack completo: orquestador + mock-api + redis
+```
+
+Ver [`poc/README.md`](poc/README.md) para el detalle y los `curl` de ejemplo.
 
 ---
 

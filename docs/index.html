@@ -46,7 +46,7 @@
       },
       flowchart:{htmlLabels:true, useMaxWidth:true, padding:16, nodeSpacing:55, rankSpacing:62, curve:'basis'},
       sequence:{useMaxWidth:true, mirrorActors:false, actorMargin:70, boxMargin:12, noteMargin:12, messageMargin:38},
-      gantt:{useMaxWidth:true, fontSize:13, barHeight:22, barGap:6, topPadding:44, leftPadding:190}
+      gantt:{useMaxWidth:true, fontSize:12, barHeight:20, barGap:5, topPadding:40, leftPadding:230, gridLineStartPadding:20}
     });
     var render = function(){ try{ mermaid.run({querySelector:'.mermaid'}); }catch(e){ console.warn('mermaid', e); } };
     if(document.fonts && document.fonts.ready){ document.fonts.ready.then(render); setTimeout(render, 1500); }
@@ -201,6 +201,24 @@ figure.diagram figcaption{font-size:12.5px;color:var(--muted);padding:0 18px 14p
 .mermaid{display:flex;justify-content:center}
 .mermaid svg{max-width:100%;height:auto}
 
+/* Timeline (roadmap) en HTML/CSS */
+.tl{display:flex;flex-direction:column;gap:7px;min-width:660px}
+.tl-axis,.tl-row{display:grid;grid-template-columns:210px repeat(17,1fr);align-items:center}
+.tl-axis{margin-bottom:4px}
+.tl-axis span{font-size:10.5px;color:var(--muted);font-weight:600;text-align:center;border-left:1px solid var(--line);padding:2px 0}
+.tl-lab{font-size:12px;font-weight:600;color:var(--ink);padding-right:12px;white-space:nowrap;grid-column:1}
+.tl-bar{height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;box-shadow:var(--shadow)}
+.tl-bar.f{background:var(--dark)}
+.tl-bar.m{background:var(--yellow);color:var(--dark)}
+.tl-bar.c{background:#7d241b}
+.tl-mil{height:24px;display:flex;align-items:center;justify-content:flex-start;font-size:11px;font-weight:700;color:#7d241b;white-space:nowrap}
+.tl-legend{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.tl-legend span{display:inline-flex;align-items:center;gap:6px}
+.tl-legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+.tl-legend i.f{background:var(--dark)}
+.tl-legend i.m{background:var(--yellow)}
+.tl-legend i.c{background:#7d241b}
+
 /* Lightbox */
 .lightbox{position:fixed;inset:0;z-index:100;background:rgba(28,27,26,.9);display:none;flex-direction:column}
 .lightbox.open{display:flex}
@@ -331,7 +349,7 @@ blockquote{margin:16px 0}
         <div class="kpi"><div class="n">500</div><div class="l">RPAs en producción</div></div>
         <div class="kpi"><div class="n">12.000</div><div class="l">Taskbots identificados</div></div>
         <div class="kpi"><div class="n">Dic 2027</div><div class="l">Cierre del desmonte</div></div>
-        <div class="kpi"><div class="n">~30 meses</div><div class="l">Ventana de ejecución</div></div>
+        <div class="kpi"><div class="n">~17 meses</div><div class="l">Ventana real (desde ago-2026)</div></div>
       </div>
 
       <h2 id="ov-resumen">Resumen ejecutivo</h2>
@@ -450,6 +468,15 @@ blockquote{margin:16px 0}
         </ol>
         <div class="callout tip"><div class="k">Principio rector</div><p>"Migrar" un duplicado es pagar dos veces por deuda técnica. El primer entregable de valor es <strong>un catálogo que dice qué NO migrar.</strong></p></div>
         <p>Diagrama de olas y estado objetivo: ver <a data-goto="uml">galería UML → Roadmap de olas</a> y <a data-goto="bloqueB">Bloque B → arquitectura</a>.</p>
+
+        <h4>Cómo funciona el discovery de los 12.000 taskbots (Ola 0)</h4>
+        <ol>
+          <li><strong>Extracción:</strong> del Control Room de Automation Anywhere se exporta metadata de bots y taskbots — nombre, jerarquía de llamadas, comandos/actividades usados, aplicaciones y objetos de UI tocados, variables, colas, calendarios de ejecución e histórico de corridas (volumen, éxito, duración).</li>
+          <li><strong>Normalización:</strong> cada taskbot se reduce a una <em>firma</em>: secuencia de pasos canónicos (abrir app → leer campo → validar → escribir → confirmar), sistemas destino y tipo de operación. Se descartan nombres y detalles cosméticos.</li>
+          <li><strong>Similitud:</strong> se agrupan (clustering) por distancia entre firmas — solapamiento de pasos y de sistemas tocados (p. ej. Jaccard sobre el conjunto de pasos + sistemas), no por nombre. De ahí salen clusters de "lo mismo con variaciones".</li>
+          <li><strong>Validación humana:</strong> los clusters candidatos los revisan dueños de proceso; un cluster solo se acepta si el negocio confirma que es la misma capacidad. Evita consolidar de más por coincidencia superficial.</li>
+          <li><strong>Salida de la Ola 0:</strong> un <strong>catálogo</strong> con, por cada capacidad: taskbots que la componen, decisión (migrar/consolidar/retirar), criticidad, dependencias, sistema destino y si tiene API. Más el <strong>baseline</strong> de métricas para medir valor.</li>
+        </ol>
       </article>
 
       <article class="q" id="q2">
@@ -468,6 +495,8 @@ blockquote{margin:16px 0}
         </table></div>
         <p><code>Score = 0.30·Valor + 0.25·Consolidación + 0.20·(6−Complejidad) + 0.15·(6−Riesgo) + 0.10·(6−Dependencia)</code></p>
         <p>Se ejecuta primero el cuadrante <strong>alto valor / baja complejidad</strong> (quick wins que financian el programa y prueban la plataforma). El <strong>alto valor / alta complejidad</strong> va después, ya con plataforma madura. El <strong>bajo valor / alta complejidad</strong> es candidato a <em>Retire</em> o RPA selectivo. Un matiz importante: la <strong>consolidación pesa casi tanto como el valor</strong>, porque migrar el bot que colapsa 40 duplicados rinde más que migrar el bot "estrella" aislado.</p>
+        <p><strong>Cómo se calibran los pesos (no son arbitrarios):</strong> son un punto de partida que se ajusta en un taller con negocio, arquitectura y riesgo, y se somete a <em>análisis de sensibilidad</em> — se varían los pesos ±10% y se observa si el orden del backlog cambia; si es estable, la priorización es robusta; si no, se discuten los casos frontera explícitamente. Los pesos y su versión quedan registrados (ADR) para auditar decisiones.</p>
+        <div class="callout warn"><div class="k">Riesgo alto ≠ migrar tarde</div><p>Un caso de <strong>alto riesgo</strong> no se pospone por su score: se mete temprano a un <em>track de descubrimiento</em> (mapear dependencias, correr en shadow, de-riesgar) aunque su <strong>retiro</strong> se ejecute más tarde. Descubrir temprano y apagar tarde son decisiones separadas.</p></div>
       </article>
 
       <article class="q" id="q3">
@@ -484,6 +513,18 @@ blockquote{margin:16px 0}
           </tbody>
         </table></div>
         <p>Cada ola es un <em>release</em> con Definition of Done que incluye: pruebas de paridad, runbook, dashboards y "kill switch" del bot antiguo. Roadmap visual en la <a data-goto="uml">galería UML</a>.</p>
+
+        <h4>Modelo cuantitativo contra diciembre de 2027</h4>
+        <p>La prueba se presenta en <strong>julio de 2026</strong>: quedan <strong>~17 meses</strong>, no 30. Descontando fundación (Olas 0–1, ~4 meses) restan ~13 meses de migración activa. Con <strong>500 RPAs</strong> eso implica retirar en promedio <strong>~38 RPAs/mes</strong> — factible <em>solo</em> porque no se migra 1:1: la consolidación colapsa duplicados, así que "retirar un RPA" muchas veces es apagar varias variantes con un componente. El dimensionamiento por escenarios:</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Escenario</th><th>Squads activos</th><th>RPAs retirados/mes</th><th>Consolidación</th><th>% tráfico fuera de AA a dic-2027</th><th>Palanca / riesgo</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Optimista</strong></td><td class="mono">7–8</td><td class="mono">~48</td><td>Alta (muchos duplicados)</td><td><span class="pill p-lo">100%</span></td><td>Alta duplicación real → corte anticipado.</td></tr>
+            <tr><td><strong>Base</strong></td><td class="mono">6</td><td class="mono">~38</td><td>Media-alta</td><td><span class="pill p-lo">~95–100%</span></td><td>APIs disponibles según lo previsto.</td></tr>
+            <tr><td><strong>Pesimista</strong></td><td class="mono">4–5</td><td class="mono">~25</td><td>Menor / APIs faltantes</td><td><span class="pill p-md">~70–80%</span></td><td>Faltan APIs → más RPA residual; se extiende el 20–30% no crítico con corte parcial.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Indicadores de avance que se miden por ola: RPAs retirados, taskbots consolidados, % de tráfico fuera de Automation Anywhere, licencias liberadas y casos bloqueados por API faltante. Si el escenario real tiende a pesimista, la respuesta no es "correr más rápido y romper" sino <strong>renegociar alcance</strong>: priorizar el desmonte del núcleo crítico para dic-2027 y acordar un corte parcial con roadmap de residuales — decisión de negocio con datos, no heroísmo técnico.</p>
       </article>
 
       <article class="q" id="q4">
@@ -496,7 +537,8 @@ blockquote{margin:16px 0}
           <li>El volumen y criticidad son bajos-medios y la UI es <strong>estable</strong> (no cambia cada release).</li>
         </ul>
         <p>Condiciones para <strong>no</strong> dejar RPA: si existe API, si el proceso es crítico/alto volumen, o si la UI es volátil (fuente de fallas). En esos casos la inversión en integración se paga sola. Todo RPA que sobreviva lleva <strong>fecha de revisión</strong> y dueño: es deuda técnica consciente y acotada, no un pase libre.</p>
-        <div class="callout warn"><div class="k">Trade-off aceptado</div><p>Mantener un runtime RPA reducido (idealmente open source, no el proveedor core) implica seguir operando dos tecnologías. Se acepta a cambio de no bloquear la migración por el 5–10% de casos sin API — pero con presupuesto y roadmap de retiro explícito.</p></div>
+        <div class="callout warn"><div class="k">Trade-off aceptado</div><p>Mantener un runtime RPA reducido (idealmente open source, no el proveedor core) implica seguir operando dos tecnologías. Se acepta a cambio de no bloquear la migración por los casos sin API — pero con presupuesto y roadmap de retiro explícito.</p>
+        <p style="font-size:13px;color:var(--muted)"><strong>Sobre el "5–10%" residual:</strong> es una <em>hipótesis a validar en la Ola 0</em>, no una estimación fuerte. El porcentaje real depende de cuántos sistemas destino exponen API; el discovery lo mide (inventario de sistemas sin integración soportada) y recalibra el presupuesto de exposición de APIs. Podría ser mayor en un entorno con mucho legacy sin API.</p></div>
       </article>
     </section>
 
@@ -586,6 +628,7 @@ flowchart TB
           </tbody>
         </table></div>
         <p>Como los módulos ya se comunican por <strong>contratos e interfaces</strong> (puertos) y eventos, extraer una capacidad a servicio es sustituir una llamada local por una remota tras el mismo contrato — un cambio localizado, no una reescritura. Se paga la complejidad distribuida <em>solo</em> donde y cuando rinde.</p>
+        <div class="callout warn"><div class="k">Los eventos no son gratis</div><p>Desacoplan la cadencia, pero introducen su propia disciplina: <strong>versionado de esquemas</strong> (AsyncAPI) con compatibilidad hacia atrás, <strong>consumer-driven contracts</strong> en CI, <strong>idempotencia</strong> en los consumidores (entrega at-least-once ⇒ duplicados), y decidir cuándo el <strong>orden</strong> importa (particiones por clave de negocio). Además hay que <strong>monitorear los consumidores</strong> (lag, reproceso, DLQ). Por eso el event-driven se aplica donde el desacople rinde, no en cada llamada; muchas interacciones síncronas request/response siguen siendo lo correcto.</p></div>
         <div class="callout tip"><div class="k">En una frase</div><p>No es "monolito vs microservicios": es <strong>fronteras y eventos primero, servicios independientes como objetivo</strong>, con extracción temprana guiada por criterio — para ganar apertura al cambio <em>sin</em> reintroducir la fragmentación que este proyecto busca eliminar.</p></div>
       </article>
 
@@ -627,6 +670,7 @@ flowchart TD
             <tr><td><strong>RPA selectivo</strong></td><td>No hay API y la UI es estable y de bajo volumen.</td><td>Existe API, alto volumen, o UI volátil.</td></tr>
           </tbody>
         </table></div>
+        <p>El árbol resuelve el <em>qué</em>; en un banco la elección final pasa además por un <strong>filtro enterprise</strong> que puede descartar una opción aunque encaje funcionalmente: alta disponibilidad y DR, <strong>auditoría y trazabilidad</strong> de cambios, segregación de ambientes, <strong>RBAC/SoD</strong>, gestión de secretos, retención de logs, soporte enterprise del proveedor, cumplimiento regulatorio (SFC, protección de datos) y encaje en el <strong>modelo operativo</strong> (quién opera, on-call, licenciamiento). P. ej., n8n puede ser ideal por integración pero requiere endurecer gobierno y HA para cargas críticas; Power Platform exige gobernar el <em>citizen development</em> con DLP y entornos. Ese filtro se aplica caso a caso y queda en el ADR de la decisión.</p>
       </article>
 
       <article class="q" id="q7">
@@ -695,6 +739,22 @@ sequenceDiagram
           </ul></div>
         </div>
         <p>Punto central: seguridad, observabilidad y gobierno son <strong>plataforma compartida</strong>, no responsabilidad de cada bot. Ahí está una de las causas raíz de la deuda actual.</p>
+        <h4>Nivel banca: controles no negociables</h4>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Control</th><th>Qué implica en esta plataforma</th></tr></thead>
+          <tbody>
+            <tr><td>Clasificación de datos</td><td>Etiquetado (público/interno/confidencial/restringido); el manejo (cifrado, logging, retención) se deriva de la clase.</td></tr>
+            <tr><td>Cifrado</td><td>En tránsito (mTLS/TLS) y en reposo; llaves gestionadas (KMS/HSM).</td></tr>
+            <tr><td>Secretos y rotación</td><td>Vault con <strong>rotación</strong> automática; nunca en código/flujo; acceso auditado.</td></tr>
+            <tr><td>RBAC + SoD</td><td>Roles mínimos por proceso y <strong>segregación de funciones</strong>: quien despliega no aprueba producción.</td></tr>
+            <tr><td>Aprobaciones y cambios</td><td>Gates de aprobación en el pipeline; trazabilidad inmutable de "quién cambió/desplegó qué".</td></tr>
+            <tr><td>DLP</td><td>Prevención de fuga de datos en salidas y logs; enmascaramiento de PII.</td></tr>
+            <tr><td>Auditoría inmutable + retención</td><td>Logs y trazas WORM con retención regulatoria; evidencias operativas exportables.</td></tr>
+            <tr><td>Segregación de ambientes</td><td>Dev/QA/prod aislados; datos productivos no fluyen a ambientes bajos.</td></tr>
+            <tr><td>Alta disponibilidad / DR</td><td>SLA por criticidad, redundancia, RTO/RPO definidos por proceso.</td></tr>
+          </tbody>
+        </table></div>
+        <p>El <strong>modelo operativo</strong> también es un control: un equipo de plataforma dueño de estos servicios transversales, on-call, runbooks y catálogo — para que ningún proceso "resuelva la seguridad por su cuenta".</p>
       </article>
     </section>
 
@@ -742,7 +802,7 @@ flowchart LR
           <li><strong>Reuse-first como política:</strong> antes de crear un componente, hay que probar que no existe uno en el catálogo. Gate en el pipeline.</li>
           <li><strong>Ownership y plataforma central:</strong> un equipo dueño de los componentes compartidos (modelo de <em>Platform/Enablement team</em>), no cada squad haciendo lo suyo.</li>
           <li><strong>Contratos y versionado:</strong> los componentes se consumen por contrato estable; romper compatibilidad tiene costo visible.</li>
-          <li><strong>Fitness functions:</strong> métricas automáticas de duplicación y acoplamiento que fallan el build si crece la fragmentación (arquitectura evolutiva medible).</li>
+          <li><strong>Fitness functions (concretas, fallan el build):</strong> (a) <em>duplicación de código</em> por análisis de similitud/AST sobre los componentes — umbral, p. ej. &gt;5% de bloques duplicados falla; (b) <em>similitud de flujos</em> n8n/BPM: dos flujos con firma casi idéntica (mismos pasos/sistemas) disparan alerta de "posible duplicado, reutiliza"; (c) <em>reuse ratio</em> del catálogo: si una capacidad nueva se parece a una existente sobre un umbral, el gate exige justificación; (d) <em>acoplamiento</em> entre módulos (dependencias no permitidas entre bounded contexts) verificado con reglas de arquitectura (p. ej. ArchUnit / import-linter). Los umbrales se calibran con el baseline de la Ola 0.</li>
           <li><strong>Golden paths / plantillas:</strong> crear un proceso nuevo parte de un scaffolding estándar, no de cero.</li>
           <li><strong>Cultura:</strong> revisiones de arquitectura ligeras y catálogo visible — la fragmentación es tanto organizacional como técnica.</li>
         </ul>
@@ -802,6 +862,24 @@ flowchart TD
           </pre></div>
           <figcaption>Reintentos solo para fallas <em>transitorias</em> (timeouts, 5xx); los errores permanentes (validación, 4xx de negocio) no se reintentan. La alerta lleva el <code>correlationId</code> para diagnóstico inmediato. El rollback usa compensaciones porque en sistemas distribuidos no hay transacción ACID global.</figcaption>
         </figure>
+
+        <div class="callout tip"><div class="k">Este flujo está implementado y verificado — PoC ejecutable</div><p>El repositorio incluye una <strong>PoC en <code>/poc</code></strong> que materializa exactamente este diagrama: un motor de saga con reintentos (backoff + jitter), compensación en orden inverso, DLQ, idempotencia y trazabilidad por <code>correlationId</code>. Corre con <code>docker compose up</code> (orquestador FastAPI + API mock + Redis) o sin infraestructura con <code>python demo.py</code>, y trae <strong>9 tests</strong> que prueban éxito, reintento, error permanente→DLQ y compensación. Diseñada con puertos/adaptadores, coherente con el <a data-goto="adr">ADR-002</a>.</p></div>
+
+        <h4>Arquitectura de referencia concreta (a producción)</h4>
+        <p>Los componentes concretos con los que se lleva este patrón a producción:</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Pieza</th><th>Responsabilidad</th><th>Implementación típica</th></tr></thead>
+          <tbody>
+            <tr><td>Estado de saga / ejecución</td><td>Persistir el avance de cada proceso para reanudar y auditar.</td><td>Tabla de ejecución o event store (workflow engine con estado).</td></tr>
+            <tr><td>Idempotency store</td><td>Evitar doble efecto ante reprocesos (at-least-once).</td><td>Redis / tabla con clave (correlationId, paso) + TTL.</td></tr>
+            <tr><td>Bus de eventos</td><td>Desacoplar productores y consumidores.</td><td>Kafka / RabbitMQ / SQS con particiones por clave.</td></tr>
+            <tr><td>DLQ</td><td>Retener lo irrecuperable + alertar on-call.</td><td>Cola dedicada + alerta por SLO.</td></tr>
+            <tr><td>Contratos</td><td>Interfaz estable entre piezas.</td><td>OpenAPI (síncrono) / AsyncAPI (eventos), versionados.</td></tr>
+            <tr><td>Secretos</td><td>Credenciales fuera del código.</td><td>Vault con rotación.</td></tr>
+            <tr><td>Observabilidad</td><td>Trazas/logs/métricas por correlationId.</td><td>OpenTelemetry collector + dashboards.</td></tr>
+            <tr><td>Catálogo</td><td>Descubrir y versionar componentes.</td><td>Service catalog + manifiesto por componente.</td></tr>
+          </tbody>
+        </table></div>
       </article>
 
       <article class="q" id="q13">
@@ -1032,25 +1110,31 @@ sequenceDiagram
       </figure>
 
       <h2>Roadmap de olas</h2>
-      <figure class="diagram" data-title="Roadmap de migración por olas">
-        <div class="fig-head"><span class="t">Gantt · olas hasta Dic 2027</span><div class="tools"><span class="tag">Mermaid</span></div></div>
-        <div class="canvas"><pre class="mermaid">
-gantt
-  title Migracion por olas hacia el corte de Automation Anywhere
-  dateFormat YYYY-MM
-  axisFormat %Y-%m
-  section Fundacion
-  Ola 0 Discovery y catalogo      :a0, 2025-08, 2M
-  Ola 1 Plataforma y pilotos      :a1, after a0, 3M
-  section Migracion
-  Ola 2 Quick wins y componentes  :a2, after a1, 4M
-  Ola 3 Volumen por dominio       :a3, after a2, 6M
-  Ola 4 Volumen por dominio       :a4, after a3, 6M
-  section Cierre
-  Ola final Complejos & RPA sel.  :a5, after a4, 5M
-  Corte AA como core              :milestone, m1, 2027-12, 0d
-        </pre></div>
-        <figcaption>Secuencia indicativa; el número de olas de volumen escala con la capacidad de squads disponible.</figcaption>
+      <figure class="diagram" data-title="Roadmap de olas">
+        <div class="fig-head"><span class="t">Roadmap · ago-2026 → dic-2027 (17 meses)</span><div class="tools"><span class="tag">Timeline</span></div></div>
+        <div class="canvas" style="cursor:default">
+          <div class="tl">
+            <div class="tl-axis">
+              <span class="tl-lab"></span>
+              <span style="grid-column:2/span 5">2026 · S2</span>
+              <span style="grid-column:7/span 6">2027 · S1</span>
+              <span style="grid-column:13/span 6">2027 · S2</span>
+            </div>
+            <div class="tl-row"><span class="tl-lab">Ola 0 · Discovery y catálogo</span><span class="tl-bar f" style="grid-column:2/span 2">Ago–Sep 26</span></div>
+            <div class="tl-row"><span class="tl-lab">Ola 1 · Plataforma y pilotos</span><span class="tl-bar f" style="grid-column:4/span 2">Oct–Nov 26</span></div>
+            <div class="tl-row"><span class="tl-lab">Ola 2 · Quick wins y componentes</span><span class="tl-bar m" style="grid-column:6/span 3">Dic 26–Feb 27</span></div>
+            <div class="tl-row"><span class="tl-lab">Ola 3 · Volumen por dominio</span><span class="tl-bar m" style="grid-column:9/span 4">Mar–Jun 27</span></div>
+            <div class="tl-row"><span class="tl-lab">Ola 4 · Volumen por dominio</span><span class="tl-bar m" style="grid-column:13/span 4">Jul–Oct 27</span></div>
+            <div class="tl-row"><span class="tl-lab">Ola final · Complejos + RPA residual</span><span class="tl-bar c" style="grid-column:17/span 2">Nov–Dic 27</span></div>
+            <div class="tl-row"><span class="tl-lab">◆ Corte AA como core</span><span class="tl-mil" style="grid-column:18/span 1">dic-27</span></div>
+          </div>
+          <div class="tl-legend">
+            <span><i class="f"></i> Fundación</span>
+            <span><i class="m"></i> Migración (squads en paralelo)</span>
+            <span><i class="c"></i> Cierre</span>
+          </div>
+        </div>
+        <figcaption>Ventana real desde ago-2026 (fecha de la prueba) hasta el corte en dic-2027. Las olas de volumen corren con varios squads en paralelo; el modelo cuantitativo de la <a data-goto="bloqueA">Pregunta 3</a> dimensiona el throughput necesario.</figcaption>
       </figure>
 
       <h2>Contexto (C4 nivel 1)</h2>
@@ -1149,7 +1233,7 @@ flowchart TB
         <div class="card"><h4>¿Cumple el reto?</h4><p>Sí: responde las 20 preguntas de los 5 bloques con criterio y las aterriza en arquitectura, diagramas y decisiones. El foco está en el objetivo real (desmontar el core sin heredar deuda), no en producir código por producirlo.</p></div>
         <div class="card"><h4>¿Está justificada la arquitectura?</h4><p>Sí, con alternativas descartadas explícitas (big-bang, lift-and-shift, todo-a-un-BPM, microservicios día-0) y ADRs. La elección tecnológica es por árbol de decisión, evitando dogma.</p></div>
         <div class="card"><h4>¿Hay sobre-ingeniería?</h4><p>Se evitó conscientemente: no se modeló un dominio DDD inexistente, microservicios solo donde aportan, RPA no se sataniza. El riesgo opuesto (sub-especificar la PoC) se reconoce abajo.</p></div>
-        <div class="card"><h4>¿Deuda técnica / puntos débiles?</h4><p>La propuesta es de nivel estrategia+diseño; falta una implementación de referencia ejecutable para el requisito "localmente reproducible" (RF-07). Es la principal brecha para llevar a un 10.</p></div>
+        <div class="card"><h4>¿Deuda técnica / puntos débiles?</h4><p>La brecha principal —el requisito "localmente reproducible" (RF-07)— se cerró con la <strong>PoC en <code>/poc</code></strong> (tests verdes). Lo pendiente es de mayor alcance: llevar la PoC a bus real (Kafka), event store y contratos en CI — mejoras futuras, no bloqueos.</p></div>
       </div>
 
       <h3>Preguntas difíciles que anticipo</h3>
@@ -1173,18 +1257,31 @@ flowchart TB
         <div class="score"><span class="lab">Arquitectura &amp; justificación</span><span class="bar"><i style="width:90%"></i></span><span class="v">9.0</span></div>
         <div class="score"><span class="lab">Criterio y trade-offs</span><span class="bar"><i style="width:93%"></i></span><span class="v">9.3</span></div>
         <div class="score"><span class="lab">Diagramas &amp; documentación</span><span class="bar"><i style="width:91%"></i></span><span class="v">9.1</span></div>
-        <div class="score"><span class="lab">Implementación ejecutable</span><span class="bar"><i class="y" style="width:60%"></i></span><span class="v">6.0</span></div>
+        <div class="score"><span class="lab">Implementación ejecutable (PoC + tests)</span><span class="bar"><i style="width:85%"></i></span><span class="v">8.5</span></div>
+        <div class="score"><span class="lab">Planeación realista (calendario)</span><span class="bar"><i style="width:87%"></i></span><span class="v">8.7</span></div>
         <hr>
-        <div class="score"><span class="lab"><strong>Global</strong></span><span class="bar"><i style="width:88%"></i></span><span class="v"><strong>8.8</strong></span></div>
+        <div class="score"><span class="lab"><strong>Global</strong></span><span class="bar"><i style="width:90%"></i></span><span class="v"><strong>9.0</strong></span></div>
       </div>
-      <p>Como propuesta estratégica y de arquitectura defendible en entrevista, es sólida (8.8/10). Para un 9.5+ falta materializar la PoC local reproducible — brecha ya identificada y acotada.</p>
+      <p>Segunda iteración tras revisión externa: se cerró la brecha de <strong>ejecutable</strong> (PoC en <code>/poc</code> con 9 tests verdes que demuestran saga, reintentos, DLQ, compensación e idempotencia por <code>correlationId</code>) y se corrigió el <strong>calendario</strong> (ventana real ~17 meses desde ago-2026, con modelo de escenarios). Con eso la propuesta pasa de ~8.8 a ~9.0 y es defendible con evidencia técnica, no solo con arquitectura.</p>
+
+      <div class="callout tip"><div class="k">Correcciones de la 2.ª iteración (según revisión senior)</div>
+        <ul style="margin:.3em 0">
+          <li><strong>PoC ejecutable local</strong> (docker-compose + demo sin infra + tests). — <em>hecho</em></li>
+          <li><strong>Calendario realista</strong> ago-2026 → dic-2027 + modelo cuantitativo por escenarios. — <em>hecho</em></li>
+          <li><strong>Discovery</strong> detallado (extracción de AA, normalización, similitud, validación humana). — <em>hecho</em></li>
+          <li><strong>Scoring</strong> con calibración y análisis de sensibilidad; riesgo alto se descubre temprano. — <em>hecho</em></li>
+          <li><strong>Banca:</strong> RBAC/SoD, DLP, rotación de secretos, auditoría inmutable, HA/DR, ambientes. — <em>hecho</em></li>
+          <li><strong>Event-driven</strong> con sus costos (versionado de esquemas, contratos, orden, duplicados). — <em>hecho</em></li>
+          <li><strong>Fitness functions</strong> concretas (duplicación por AST/flujo, reuse ratio, acoplamiento). — <em>hecho</em></li>
+        </ul>
+      </div>
 
       <h2>Mejoras futuras</h2>
       <ul>
-        <li>PoC local + pipeline de <em>parallel run</em> automatizado para certificar paridad.</li>
+        <li>Extender la PoC con event store y bus real (Kafka) + consumer-driven contracts en CI.</li>
+        <li>Pipeline de <em>parallel run</em> automatizado para certificar paridad antes del kill switch.</li>
         <li>Portal de desarrollador con catálogo, scaffolding y métricas de reutilización en vivo.</li>
         <li>Motor de discovery asistido (análisis de logs/UI) para acelerar la Ola 0.</li>
-        <li>Política de retiro de RPA residual con fechas y presupuesto de exposición de APIs.</li>
       </ul>
 
     </section>
