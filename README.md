@@ -1,5 +1,9 @@
 # Prueba Técnica A · Bancolombia — Evolución de RPA
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-live-brightgreen?logo=github)](https://cataia-code.github.io/bancolombia-technical-challenge-a/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Bancolombia](https://img.shields.io/badge/Bancolombia-Prueba_Técnica_A-FFDA00?labelColor=00317D)](https://www.bancolombia.com/personas)
+
 Propuesta técnica para la **Parte A** del reto de Senior Software Engineer: cómo evolucionar una operación de automatización de **500 RPAs / 12.000 taskbots sobre Automation Anywhere** hacia una **arquitectura modular evolutiva, reutilizable y con menor deuda técnica**, retirando la plataforma RPA como *core* antes de diciembre de 2027.
 
 El entregable es un **sitio web técnico navegable** que responde las 20 preguntas del reto (5 bloques) con criterio de arquitectura, diagramas UML, ADRs y una revisión crítica.
@@ -59,6 +63,45 @@ Cada diagrama es interactivo: **zoom/pan** a pantalla completa y **descarga en S
 └── README.md
 ```
 
+## Ejecución local completa (quickstart)
+
+Requisitos: **Python 3.10+** (validado en 3.10.11) y, opcionalmente, **Docker** para el stack de la PoC. El sitio solo necesita un servidor HTTP simple.
+
+**1. Crear el entorno virtual e instalar dependencias** (una sola vez, desde la raíz):
+
+```powershell
+# PowerShell (Windows)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r poc\requirements.txt -r discovery\requirements.txt
+```
+
+```bash
+# bash (Linux/macOS)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r poc/requirements.txt -r discovery/requirements.txt
+```
+
+**2. Verificar los tres componentes de una sola pasada** (con la venv activada, desde la raíz):
+
+```powershell
+# Discovery: 22 tests + regenerar catálogo
+python -m pytest discovery\tests -q
+python -c "import runpy; runpy.run_path('discovery/discovery.py', run_name='__main__')"
+
+# PoC: 38 tests con 100% coverage + demo de trazas
+python -m pytest poc\tests --cov=poc/src --cov-report=term-missing --cov-fail-under=100
+python poc\demo.py
+
+# Sitio: servir en local y abrir http://localhost:8080
+python -m http.server 8080 --directory docs
+```
+
+> En Windows, ejecutar `discovery.py` con la ruta directa a la venv puede fallar por cómo se resuelve el launcher; por eso el comando de arriba usa `runpy` desde la raíz, que es reproducible en cualquier plataforma.
+
+Cada bloque de las secciones siguientes profundiza en cada componente por separado.
+
 ## PoC ejecutable (`/poc`)
 
 Materializa el patrón técnico de la propuesta (Pregunta 12): saga con **reintentos + backoff**, **compensación** (rollback), **DLQ**, **idempotencia** y **trazabilidad por `correlationId`**. Diseñada con puertos y adaptadores.
@@ -92,7 +135,7 @@ Sobre el inventario de ejemplo (44 taskbots) el motor colapsa a **15 capacidades
 
 ## Cómo verlo en local
 
-El sitio es estático; requiere un servidor HTTP simple (Mermaid no renderiza al abrir el archivo con `file://`).
+El sitio es estático; requiere un servidor HTTP simple.
 
 ```bash
 # Opción 1 — Python
